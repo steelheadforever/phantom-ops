@@ -71,7 +71,30 @@ GARS must always render **below** airspace and below future drawing layers.
 
 ## Frontend
 - Leaflet (map engine)
-- Modular JS/TS architecture (migrate from single-file HTML toward separated modules)
+- JavaScript-first modular architecture for v1 (with clean boundaries so TypeScript migration is straightforward)
+
+## 5.1 Codebase Contract (Authoritative for subagents)
+
+### v1 directory structure target
+- `index.html` — app shell
+- `src/main.js` — bootstraps app
+- `src/map/MapCore.js`
+- `src/map/LayerManager.js`
+- `src/services/CoordinateService.js`
+- `src/services/GeoFilterService.js`
+- `src/services/DataService.js`
+- `src/ui/OverlayService.js`
+- `src/ui/StatusBar.js`
+- `src/styles/` — CSS modules (map, controls, status bar, overlays)
+- `docs/` — design notes, data-source register, subagent handoff docs
+
+### Subagent ownership boundaries
+- **WP-A** owns `src/ui/*` and coordinate-display wiring in `CoordinateService`.
+- **WP-B** owns `src/map/LayerManager.js` and z-order constants.
+- **WP-C** owns docs only (`docs/data-source-register.md`, licensing notes), no runtime code edits.
+
+### Shared integration rule
+- If a subagent must touch another package's area, it must add a short "cross-boundary note" in its implementation note explaining why.
 
 ## Core Modules
 1. `MapCore`
@@ -111,6 +134,18 @@ GARS must always render **below** airspace and below future drawing layers.
 4. **GPS points**
    - open-license source to be selected after validation of coverage and legal terms
 
+## 6.1 Phase 0 Deliverable — Data Source Register (WP-C)
+WP-C must produce `docs/data-source-register.md` before WP-D/WP-E/WP-F start.
+
+Each dataset entry must include:
+- Source URL
+- License + redistribution status
+- Required attribution/disclaimer text
+- Geographic coverage (CONUS)
+- Refresh cadence
+- File format/schema summary
+- Known gaps/quality caveats
+
 ## Licensing policy
 - Open-source/open-license only
 - Avoid paid APIs/services
@@ -130,6 +165,12 @@ GARS must always render **below** airspace and below future drawing layers.
   4. back to MGRS
 - If cursor is off-map/unknown, show `--`
 
+### Coordinate output precision (authoritative)
+- **MGRS:** 10-digit grid (1m precision)
+- **DMM:** 4 decimal places for minutes
+- **DMS:** 2 decimal places for seconds
+- Use hemisphere notation (`N/S`, `E/W`) for DMS/DMM
+
 ## 7.2 Center Crosshair
 - Fixed visual element at viewport center
 - Non-interactive, always visible
@@ -139,6 +180,7 @@ GARS must always render **below** airspace and below future drawing layers.
 - Toggle visibility for each layer
 - Opacity/dimming controls for raster layers
 - Preserve current dimmer behavior and make it compatible with VFR/IFR layers
+- **Dimmer behavior:** dimmer applies to map imagery only (base map/raster presentation), not UI controls, crosshair, status bar, airspace overlays, GARS labels, or future drawings
 
 ## 7.4 GPS Points (100 NM)
 - Radius anchored to map center (crosshair), not cursor
@@ -200,13 +242,24 @@ Each subagent should:
    - what changed
    - why
    - acceptance criteria met
+4. Write durable handoff context for future subagents in `docs/subagent-notes/`:
+   - decisions made
+   - assumptions
+   - unresolved questions
+   - files touched
+
+## Execution gates (authoritative)
+- **Gate 0:** WP-C must publish `docs/data-source-register.md` before WP-D/WP-E/WP-F begin.
+- **Gate 1:** WP-A and WP-B may run in parallel after this spec version is in repo.
+- **Gate 2:** WP-D/WP-E start only after WP-B merge (layer ordering scaffold present).
+- **Gate 3:** WP-F starts after WP-C GPS dataset decision is approved and schema is documented.
 
 ## Initial parallelizable packages
 - **WP-A:** Phase 1 (crosshair + coordinate status bar + format cycle)
 - **WP-B:** LayerManager scaffold + z-order enforcement
 - **WP-C:** Data-source research doc for VFR/IFR, GARS, airspace, GPS licensing/cadence
 
-After WP-A/B merge:
+After WP-A/B merge and Gate 0 satisfied:
 - **WP-D:** VFR/IFR layer integration
 - **WP-E:** GARS + airspace overlay integration
 - **WP-F:** GPS 100 NM filtering and optimization
@@ -222,6 +275,30 @@ v1 is complete when:
 4. GPS filtering behavior matches Section 7.4
 5. Data sources are documented with licensing/attribution notes
 6. Basic regression checklist passes (map movement, toggles, dimmer, no major console errors)
+
+## 11.1 Test Plan (required)
+
+### Unit tests
+- Coordinate formatting:
+  - MGRS outputs 10-digit grid (1m)
+  - DMM outputs 4 decimal places
+  - DMS outputs 2 decimal places
+- Geo filter:
+  - point included at <= 100 NM
+  - point excluded at > 100 NM
+
+### Integration tests
+- Layer order assertions enforce: base < GARS < airspace < future drawings
+- Dimmer affects map imagery only
+- Coordinate click cycles MGRS -> DMS -> DMM -> MGRS deterministically
+
+### Manual regression checklist
+- Pan/zoom remains smooth
+- Cursor coordinate updates while moving over map
+- Crosshair remains fixed at viewport center
+- GARS toggles independently and stays under airspace
+- VFR/IFR layers can be selected and dimmed
+- No major console errors during normal interactions
 
 ---
 
