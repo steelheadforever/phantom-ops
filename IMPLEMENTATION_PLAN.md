@@ -308,6 +308,10 @@ v1 is complete when:
 2. Exact tactical color palette and legend conventions
 3. Preferred hosting/deploy pipeline for `phantom-ops.net`
 
+## 12.1 Decisions locked after WP-A/WP-B review
+- Keep current dimmer behavior (map-imagery dimming only) as-is for v1.
+- Pane reservation for future drawing layers is sufficient for now (no placeholder drawing layer required in v1).
+
 ---
 
 ## 13) Notes for Future Phases (Not in v1)
