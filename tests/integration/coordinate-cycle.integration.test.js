@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import mgrs from 'mgrs';
-import { StatusBar } from '../src/ui/StatusBar.js';
-import { CoordinateService } from '../src/services/CoordinateService.js';
+import { StatusBar } from '../../src/ui/StatusBar.js';
+import { CoordinateService } from '../../src/services/CoordinateService.js';
 
 test('Coordinate click cycles deterministically MGRS -> DMS -> DMM -> MGRS', () => {
   const dom = new JSDOM('<!doctype html><html><body></body></html>');

@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/integration/*.test.js"
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "mgrs": "^2.1.0"
   }
 }
