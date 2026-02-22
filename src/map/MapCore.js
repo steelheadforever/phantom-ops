@@ -61,6 +61,8 @@ export class MapCore {
 
     this.baseLayers = baseLayerLabels;
 
+    this.layerManager.setLayerVisibility('airspace-arcgis', true);
+
     const overlays = {
       'Airspace (ArcGIS)': this.airspaceLayer,
     };

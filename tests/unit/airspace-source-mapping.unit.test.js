@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { AirspaceSourceService, ArcGISAirspaceSource } from '../../src/services/airspace/AirspaceSourceService.js';
+import {
+  AirspaceSourceService,
+  ArcGISAirspaceSource,
+  DEFAULT_ARCGIS_AIRSPACE_GEOJSON_ENDPOINT,
+} from '../../src/services/airspace/AirspaceSourceService.js';
 import { mapAirspaceKind } from '../../src/services/airspace/airspaceStyle.js';
 
 test('ArcGIS source adapter fetches configured endpoint and returns FeatureCollection', async () => {
@@ -24,6 +28,11 @@ test('ArcGIS source adapter fetches configured endpoint and returns FeatureColle
 
   assert.deepEqual(actual, expected);
   assert.deepEqual(calls, ['https://example.test/airspace.geojson']);
+});
+
+test('default ArcGIS airspace endpoint targets FAA special use airspace geojson query', () => {
+  assert.match(DEFAULT_ARCGIS_AIRSPACE_GEOJSON_ENDPOINT, /Special_Use_Airspace\/FeatureServer\/0\/query/);
+  assert.match(DEFAULT_ARCGIS_AIRSPACE_GEOJSON_ENDPOINT, /f=geojson/);
 });
 
 test('airspace type mapping covers tactical style hooks', () => {

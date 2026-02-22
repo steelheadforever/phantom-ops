@@ -1,5 +1,5 @@
 export const DEFAULT_ARCGIS_AIRSPACE_GEOJSON_ENDPOINT =
-  'https://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/2/query?where=1%3D1&outFields=*&f=geojson';
+  'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/Special_Use_Airspace/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson';
 
 export class ArcGISAirspaceSource {
   constructor({ endpoint = DEFAULT_ARCGIS_AIRSPACE_GEOJSON_ENDPOINT, fetchImpl = globalThis.fetch } = {}) {
