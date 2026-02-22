@@ -5,104 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Phantom - Mission Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: #0a0a0a;
-      overflow: hidden;
-    }
-
-    #map {
-      width: 100vw;
-      height: 100vh;
-    }
-
-    /* Dim overlay */
-    #dim-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0);
-      pointer-events: none;
-      z-index: 900;
-      transition: background 0.15s ease;
-    }
-
-    /* Dimmer control */
-    .dimmer-control {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      z-index: 1000;
-      background: rgba(20, 20, 20, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: #ccc;
-      font-size: 13px;
-      user-select: none;
-    }
-
-    .dimmer-control svg {
-      flex-shrink: 0;
-      opacity: 0.7;
-    }
-
-    .dimmer-control input[type="range"] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 120px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-    }
-
-    .dimmer-control input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #e0e0e0;
-      border: 2px solid rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-    }
-
-    .dimmer-control input[type="range"]::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #e0e0e0;
-      border: 2px solid rgba(0, 0, 0, 0.3);
-      cursor: pointer;
-    }
-
-    .dim-value {
-      min-width: 32px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-      font-size: 12px;
-      opacity: 0.6;
-    }
-
-    /* Override Leaflet attribution styling */
-    .leaflet-control-attribution {
-      background: rgba(0, 0, 0, 0.6) !important;
-      color: rgba(255, 255, 255, 0.5) !important;
-      font-size: 10px !important;
-    }
-
-    .leaflet-control-attribution a {
-      color: rgba(255, 255, 255, 0.6) !important;
-    }
-  </style>
+  <link rel="stylesheet" href="./src/styles/map.css" />
+  <link rel="stylesheet" href="./src/styles/controls.css" />
+  <link rel="stylesheet" href="./src/styles/overlays.css" />
+  <link rel="stylesheet" href="./src/styles/status-bar.css" />
 </head>
 <body>
   <div id="map"></div>
@@ -125,54 +31,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // Initialize map centered on CONUS
-    const map = L.map('map', {
-      center: [39.0, -98.0],
-      zoom: 5,
-      zoomControl: true,
-    });
-
-    // OpenStreetMap base
-    const osmBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 18,
-    });
-
-    // Esri World Imagery (satellite) - public CORS-enabled service
-    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 18,
-      attribution: 'Imagery &copy; Esri',
-    });
-
-    // OpenTopoMap (terrain)
-    const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: '&copy; OpenTopoMap contributors',
-    });
-
-    // Default: satellite base
-    satellite.addTo(map);
-
-    // Layer switcher
-    const baseLayers = {
-      'Satellite': satellite,
-      'Terrain': topoMap,
-      'Street Map': osmBase,
-    };
-
-    L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
-
-    // Dimmer
-    const dimOverlay = document.getElementById('dim-overlay');
-    const dimSlider = document.getElementById('dimmer');
-    const dimValue = document.getElementById('dim-value');
-
-    dimSlider.addEventListener('input', (e) => {
-      const val = e.target.value;
-      dimOverlay.style.background = `rgba(0, 0, 0, ${val / 100})`;
-      dimValue.textContent = `${val}%`;
-    });
-  </script>
+  <script src="https://unpkg.com/mgrs@2.1.0/dist/mgrs.min.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>
