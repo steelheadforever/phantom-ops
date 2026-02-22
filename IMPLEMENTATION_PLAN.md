@@ -227,7 +227,7 @@ Each dataset entry must include:
 
 ## Phase 5 — Data Ops & Reliability
 - Add data manifest + version timestamps
-- Add 28-day update check workflow
+- ~~Add 28-day update check workflow~~ — **Done:** Cloudflare Worker cron refreshes Class B/C/D from FAA ArcGIS daily; data served from R2 at `/data/airspace/*`
 - Surface “last updated” metadata in UI
 - Acceptance: operator can verify data currency quickly
 
@@ -306,7 +306,6 @@ v1 is complete when:
 
 1. Final open-license GPS points dataset selection
 2. Exact tactical color palette and legend conventions
-3. Preferred hosting/deploy pipeline for `phantom-ops.net`
 
 ## 12.1 Decisions locked after WP-A/WP-B review
 - Keep current dimmer behavior (map-imagery dimming only) as-is for v1.

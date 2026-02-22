@@ -101,9 +101,10 @@ Project constraints applied:
 
 ## 4) Airspace polygons — Class B/C/D (selected)
 
-**Dataset**: FAA NASR 28-Day Subscription → `Additional_Data/Shape_Files/Class_Airspace.shp`  
-**Source URL**: https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/  
+**Dataset**: FAA NASR 28-Day Subscription → `Additional_Data/Shape_Files/Class_Airspace.shp`
+**Source URL**: https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/
 **Archive URL pattern**: `https://nfdc.faa.gov/webContent/28DaySub/28DaySubscription_Effective_<YYYY-MM-DD>.zip`
+**Runtime source**: FAA ArcGIS FeatureServer → cached as GeoJSON in Cloudflare R2 → served by Worker at `/data/airspace/class-{b,c,d}.geojson`
 
 - **License + redistribution status**
   - Public FAA source; downloadable without paid license.
@@ -115,10 +116,17 @@ Project constraints applied:
   - Yes (national coverage; includes non-CONUS records too).
 - **Refresh cadence**
   - AIRAC/NASR 28-day cycle.
+  - **Automated:** Cloudflare Worker cron (`0 6 * * *` UTC) refreshes data daily from FAA ArcGIS and writes to R2.
+  - **Manual:** `scripts/cache-airspace.sh --upload` fetches and uploads to R2 on demand.
 - **File format/schema summary**
   - ESRI Shapefile components (`.shp/.shx/.dbf/.prj`).
   - Key attributes observed in current file include: `IDENT`, `NAME`, `CLASS`, `LOCAL_TYPE`, altitude descriptors (`UPPER_*`, `LOWER_*`), and geometry area/length.
   - Distinct class values observed: B/C/D/E; filter to B/C/D for this scope.
+- **Serving infrastructure**
+  - Cloudflare R2 bucket: `phantom-airspace-data`
+  - Cloudflare Worker: `workers/airspace-cache/` (fetch handler + cron trigger)
+  - Route: `phantom-ops.net/data/airspace/*`
+  - GeoJSON files are too large for git (10-94MB); stored in R2 only, excluded via `.gitignore`
 - **Known gaps/quality caveats**
   - This layer does **not** include MOA/Alert/Restricted in the same shapefile.
   - Multi-part geometries and altitude semantics need normalization in pipeline.

@@ -2,6 +2,10 @@
 
 _Last updated: 2026-02-22_
 
+## Completed
+
+- **Airspace data pipeline** — Class B/C/D GeoJSON served from Cloudflare R2 via Worker with daily cron refresh from FAA ArcGIS. Manual seed via `scripts/cache-airspace.sh --upload`. Large GeoJSON files removed from git.
+
 ## Open Questions
 
 1. **Chart cycle metadata automation**
