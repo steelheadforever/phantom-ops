@@ -1,67 +1,33 @@
-export const BASE_LAYER_SOURCE_DEFINITIONS = Object.freeze([
-  {
-    id: 'base-satellite',
-    label: 'Satellite',
-    type: 'tile',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+import { BASE_LAYER_MANIFEST } from '../config/base-layer-manifest.js';
+
+export function createBaseLayerSourceDefinitions(manifest) {
+  const layers = manifest?.layers;
+  if (!Array.isArray(layers)) {
+    throw new Error('Base layer manifest must provide a layers array');
+  }
+
+  return layers.map((layer) => ({
+    id: layer.id,
+    label: layer.label,
+    type: layer.type,
+    url: layer.url,
     options: {
-      maxZoom: 18,
-      attribution: 'Imagery &copy; Esri',
+      maxZoom: layer.maxZoom,
+      attribution: layer.attribution,
     },
-    isDefault: true,
-  },
-  {
-    id: 'base-terrain',
-    label: 'Terrain',
-    type: 'tile',
-    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 17,
-      attribution: '&copy; OpenTopoMap contributors',
+    isDefault: Boolean(layer.isDefault),
+    metadata: {
+      cycle: layer.cycle ?? manifest?.cycle ?? null,
+      publishedAt: layer.publishedAt ?? manifest?.publishedAt ?? null,
+      version: layer.version ?? null,
+      schemaVersion: manifest?.schemaVersion ?? null,
     },
-  },
-  {
-    id: 'base-street',
-    label: 'Street Map',
-    type: 'tile',
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 18,
-      attribution: '&copy; OpenStreetMap contributors',
-    },
-  },
-  {
-    id: 'base-vfr-sectional',
-    label: 'VFR Sectional (FAA)',
-    type: 'tile',
-    // Endpoint remains configurable; swap/retarget by editing this definition.
-    url: 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/ArcGIS/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 12,
-      attribution: 'FAA AIS chart-derived tiles (planning use only)',
-    },
-  },
-  {
-    id: 'base-ifr-low',
-    label: 'IFR Low (FAA)',
-    type: 'tile',
-    url: 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/ArcGIS/rest/services/IFR_AreaLow/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 12,
-      attribution: 'FAA AIS chart-derived tiles (planning use only)',
-    },
-  },
-  {
-    id: 'base-ifr-high',
-    label: 'IFR High (FAA)',
-    type: 'tile',
-    url: 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/ArcGIS/rest/services/IFR_High/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 12,
-      attribution: 'FAA AIS chart-derived tiles (planning use only)',
-    },
-  },
-]);
+  }));
+}
+
+export const BASE_LAYER_SOURCE_DEFINITIONS = Object.freeze(
+  createBaseLayerSourceDefinitions(BASE_LAYER_MANIFEST),
+);
 
 export function createBaseTileLayer(definition, leafletLib = L) {
   if (definition.type !== 'tile') {

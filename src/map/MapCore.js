@@ -3,6 +3,7 @@ import { wireDimmerControl } from '../ui/dimmerControl.js';
 import { AirspaceSourceService, ArcGISAirspaceSource } from '../services/airspace/AirspaceSourceService.js';
 import { getAirspaceStyle } from '../services/airspace/airspaceStyle.js';
 import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
+import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 
 export class MapCore {
   constructor({
@@ -10,12 +11,14 @@ export class MapCore {
     airspaceSource,
     airspaceSourceService,
     baseLayerDefinitions = BASE_LAYER_SOURCE_DEFINITIONS,
+    storage = globalThis?.localStorage ?? null,
   } = {}) {
     this.map = null;
     this.layerManager = null;
     this.baseLayers = null;
     this.airspaceLayer = null;
     this.baseLayerDefinitions = baseLayerDefinitions;
+    this.storage = storage;
 
     this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({ endpoint: airspaceEndpoint });
     this.airspaceSourceService = airspaceSourceService ?? new AirspaceSourceService(this.airspaceSource);
@@ -30,7 +33,6 @@ export class MapCore {
 
     this.layerManager = new LayerManager(this.map).initializePanes();
 
-    const defaultBaseLayerId = this.baseLayerDefinitions.find((item) => item.isDefault)?.id ?? this.baseLayerDefinitions[0]?.id;
     const baseLayerLabels = {};
 
     this.baseLayerDefinitions.forEach((definition) => {
@@ -39,8 +41,14 @@ export class MapCore {
       baseLayerLabels[definition.label] = layer;
     });
 
-    if (defaultBaseLayerId) {
-      this.layerManager.showLayer(defaultBaseLayerId);
+    const initialBaseLayerId = resolveInitialBaseLayerId({
+      definitions: this.baseLayerDefinitions,
+      storage: this.storage,
+    });
+
+    if (initialBaseLayerId) {
+      this.layerManager.showLayer(initialBaseLayerId);
+      persistBaseLayerId(this.storage, initialBaseLayerId);
     }
 
     this.airspaceLayer = L.geoJSON(null, {
@@ -110,9 +118,17 @@ export class MapCore {
   }
 
   #syncBaseLayer(activeLayer) {
+    let activeLayerId = null;
+
     for (const [layerId, entry] of this.layerManager.layers.entries()) {
       if (entry.kind !== 'base') continue;
-      this.layerManager.setLayerVisibility(layerId, entry.layer === activeLayer);
+      const isActive = entry.layer === activeLayer;
+      this.layerManager.setLayerVisibility(layerId, isActive);
+      if (isActive) {
+        activeLayerId = layerId;
+      }
     }
+
+    persistBaseLayerId(this.storage, activeLayerId);
   }
 }
