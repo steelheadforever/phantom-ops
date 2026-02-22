@@ -3,15 +3,21 @@ const AIRSPACE_COLORS = Object.freeze({
   moa: '#8e7dff',
   alert: '#ffb347',
   restricted: '#ff5f5f',
-  fallback: '#8a8a8a',
+  fallback: '#d6dee7',
+});
+
+const BASE_STYLE = Object.freeze({
+  opacity: 0.95,
+  fill: true,
+  fillOpacity: 0.26,
 });
 
 export const AIRSPACE_STYLE_BY_KIND = Object.freeze({
-  classBCD: Object.freeze({ color: AIRSPACE_COLORS.classBCD, weight: 1.5, fillOpacity: 0.16 }),
-  moa: Object.freeze({ color: AIRSPACE_COLORS.moa, weight: 1.5, fillOpacity: 0.16 }),
-  alert: Object.freeze({ color: AIRSPACE_COLORS.alert, weight: 1.5, fillOpacity: 0.16 }),
-  restricted: Object.freeze({ color: AIRSPACE_COLORS.restricted, weight: 1.5, fillOpacity: 0.16 }),
-  fallback: Object.freeze({ color: AIRSPACE_COLORS.fallback, weight: 1.0, fillOpacity: 0.1 }),
+  classBCD: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.classBCD, fillColor: AIRSPACE_COLORS.classBCD, weight: 1.8 }),
+  moa: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.moa, fillColor: AIRSPACE_COLORS.moa, weight: 1.8 }),
+  alert: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.alert, fillColor: AIRSPACE_COLORS.alert, weight: 1.8 }),
+  restricted: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.restricted, fillColor: AIRSPACE_COLORS.restricted, weight: 2.0 }),
+  fallback: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.fallback, fillColor: AIRSPACE_COLORS.fallback, weight: 1.4, fillOpacity: 0.2 }),
 });
 
 function normalizeValue(value) {
@@ -21,8 +27,6 @@ function normalizeValue(value) {
 }
 
 function resolveRawType(properties = {}) {
-  // TODO(WP-E): tighten this field mapping once the selected FAA-native dataset schema is locked.
-  // ArcGIS sources in the wild use varying keys (TYPE, TYPE_CODE, CLASS, LOCAL_TYPE, etc.).
   const candidates = [
     properties.TYPE,
     properties.TYPE_CODE,
@@ -45,15 +49,15 @@ export function mapAirspaceKind(properties = {}) {
     return 'classBCD';
   }
 
-  if (/\bMOA\b|\bMILITARY OPERATIONS AREA\b/.test(raw)) {
+  if (/\bMOA\b|\bMILITARY OPERATIONS AREA\b/.test(raw) || raw === 'M') {
     return 'moa';
   }
 
-  if (/\bALERT\b/.test(raw)) {
+  if (/\bALERT\b/.test(raw) || raw === 'A' || /\bA-\d+/.test(raw)) {
     return 'alert';
   }
 
-  if (/\bRESTRICTED\b|\bR-\d+/.test(raw)) {
+  if (/\bRESTRICTED\b|\bPROHIBITED\b|\bWARNING\b|\bR-\d+/.test(raw) || /^R$|^P$|^W$/.test(raw)) {
     return 'restricted';
   }
 

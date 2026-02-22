@@ -28,10 +28,13 @@ function createLeafletStub() {
     }),
     geoJSON: () => ({
       options: {},
+      _renderedFeatures: [],
       addTo(targetMap) { targetMap.activeLayers.add(this); return this; },
-      clearLayers() {},
-      addData() {},
+      clearLayers() { this._renderedFeatures = []; },
+      addData(fc) { this._renderedFeatures = Array.isArray(fc?.features) ? fc.features : []; },
+      getLayers() { return this._renderedFeatures; },
       setZIndex() {},
+      bringToFront() {},
     }),
     control: {
       layers: () => ({ addTo() {} }),
@@ -39,14 +42,26 @@ function createLeafletStub() {
   };
 }
 
-test('airspace overlay is visible by default and toggling updates visibility state', async () => {
+test('airspace overlay is visible by default, renders features, and toggling updates visibility state', async () => {
   const priorL = globalThis.L;
   globalThis.L = createLeafletStub();
 
   try {
     const mapCore = new MapCore({
       storage: { getItem: () => null, setItem() {} },
-      airspaceSourceService: { loadAirspaceFeatureCollection: async () => ({ type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: null }] }) },
+      airspaceSourceService: {
+        loadAirspaceFeatureCollection: async () => ({
+          type: 'FeatureCollection',
+          features: [{
+            type: 'Feature',
+            properties: { TYPE_CODE: 'R' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [[[-98, 39], [-97.5, 39], [-97.5, 39.5], [-98, 39.5], [-98, 39]]],
+            },
+          }],
+        }),
+      },
       baseLayerDefinitions: [
         {
           id: 'base-satellite',
@@ -61,8 +76,10 @@ test('airspace overlay is visible by default and toggling updates visibility sta
     });
 
     mapCore.init();
+    await mapCore.loadAirspaceData();
 
     assert.equal(mapCore.layerManager.getLayerMeta('airspace-arcgis').visible, true);
+    assert.ok(mapCore.airspaceLayer.getLayers().length > 0);
 
     mapCore.setAirspaceVisibility(false);
     assert.equal(mapCore.layerManager.getLayerMeta('airspace-arcgis').visible, false);

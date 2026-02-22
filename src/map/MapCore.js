@@ -6,6 +6,8 @@ import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerS
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
 
+const AVIATION_BASE_IDS = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
+
 export class MapCore {
   constructor({
     airspaceEndpoint,
@@ -21,6 +23,8 @@ export class MapCore {
     this.baseLayerDefinitions = baseLayerDefinitions;
     this.storage = storage;
     this.baseLayerById = new Map();
+    this.sourceStatusByLayerId = new Map();
+    this.sourceDebugEl = null;
 
     this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({
       endpoint: airspaceEndpoint,
@@ -45,6 +49,11 @@ export class MapCore {
       this.#registerBaseLayer(definition.id, layer);
       this.baseLayerById.set(definition.id, { definition, layer });
       baseLayerLabels[definition.label] = layer;
+      this.sourceStatusByLayerId.set(definition.id, {
+        configuredUrl: definition.url,
+        activeUrl: definition.url,
+        degraded: false,
+      });
     });
 
     const initialBaseLayerId = resolveInitialBaseLayerId({
@@ -87,6 +96,7 @@ export class MapCore {
       }
     });
 
+    this.#ensureSourceDebugIndicator();
     this.validateOperationalSources().catch((error) => {
       console.warn('Operational source validation failed:', error);
     });
@@ -100,6 +110,9 @@ export class MapCore {
     const featureCollection = await this.airspaceSourceService.loadAirspaceFeatureCollection();
     this.airspaceLayer.clearLayers();
     this.airspaceLayer.addData(featureCollection);
+    if (typeof this.airspaceLayer.bringToFront === 'function') {
+      this.airspaceLayer.bringToFront();
+    }
   }
 
   setupDimmer() {
@@ -118,26 +131,57 @@ export class MapCore {
   }
 
   async validateOperationalSources() {
-    const aviationBaseIds = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
-
-    for (const layerId of aviationBaseIds) {
+    for (const layerId of AVIATION_BASE_IDS) {
       const entry = this.baseLayerById.get(layerId);
       if (!entry) continue;
 
       const { definition, layer } = entry;
       const { template } = await resolveHealthyTileEndpoint(definition.url, definition.fallbackUrls ?? []);
+      const degraded = template !== definition.url;
 
-      if (template !== definition.url) {
-        definition.url = template;
-        if (typeof layer.setUrl === 'function') {
-          layer.setUrl(template);
-        }
+      this.sourceStatusByLayerId.set(layerId, {
+        configuredUrl: definition.url,
+        activeUrl: template,
+        degraded,
+      });
+
+      if (degraded && typeof layer.setUrl === 'function') {
+        layer.setUrl(template);
       }
+    }
+
+    this.#updateSourceDebugIndicator();
+
+    const ifrLow = this.sourceStatusByLayerId.get('base-ifr-low');
+    const ifrHigh = this.sourceStatusByLayerId.get('base-ifr-high');
+    if (ifrLow && ifrHigh && ifrLow.activeUrl === ifrHigh.activeUrl) {
+      console.warn('IFR degraded mode: IFR Low and IFR High currently resolve to same active source URL.', {
+        ifrLow,
+        ifrHigh,
+      });
     }
 
     if (this.airspaceSource && typeof this.airspaceSource.resolveEndpoint === 'function') {
       await this.airspaceSource.resolveEndpoint();
     }
+  }
+
+  getOperationalSourceStatus() {
+    const aviation = Object.fromEntries(
+      AVIATION_BASE_IDS
+        .map((id) => [id, this.sourceStatusByLayerId.get(id)])
+        .filter(([, value]) => Boolean(value)),
+    );
+
+    const ifrLow = aviation['base-ifr-low'];
+    const ifrHigh = aviation['base-ifr-high'];
+    const ifrDistinctActiveSources = Boolean(ifrLow && ifrHigh && ifrLow.activeUrl !== ifrHigh.activeUrl);
+
+    return {
+      aviation,
+      ifrDistinctActiveSources,
+      degraded: Object.values(aviation).some((entry) => entry?.degraded),
+    };
   }
 
   setAirspaceVisibility(visible) {
@@ -165,5 +209,35 @@ export class MapCore {
     }
 
     persistBaseLayerId(this.storage, activeLayerId);
+  }
+
+  #ensureSourceDebugIndicator() {
+    if (typeof document === 'undefined') return;
+
+    let el = document.getElementById('source-debug-indicator');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'source-debug-indicator';
+      el.className = 'source-debug-indicator';
+      document.body.appendChild(el);
+    }
+
+    this.sourceDebugEl = el;
+    this.#updateSourceDebugIndicator();
+  }
+
+  #updateSourceDebugIndicator() {
+    if (!this.sourceDebugEl) return;
+
+    const low = this.sourceStatusByLayerId.get('base-ifr-low');
+    const high = this.sourceStatusByLayerId.get('base-ifr-high');
+    const mode = low && high && low.activeUrl === high.activeUrl ? 'DEGRADED' : 'OK';
+
+    const summarize = (entry) => {
+      if (!entry) return 'n/a';
+      return entry.degraded ? 'fallback' : 'primary';
+    };
+
+    this.sourceDebugEl.textContent = `Sources ${mode} | VFR:${summarize(this.sourceStatusByLayerId.get('base-vfr-sectional'))} IFR-L:${summarize(low)} IFR-H:${summarize(high)}`;
   }
 }

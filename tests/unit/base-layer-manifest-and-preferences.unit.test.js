@@ -47,6 +47,13 @@ test('manifest parsing creates expected base-layer definitions and metadata wiri
   assert.match(vfr.fallbackUrls[0], /^https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/World_Imagery\//);
   assert.equal(vfr.metadata.version, 'vfr-sectional');
   assert.equal(vfr.metadata.schemaVersion, BASE_LAYER_MANIFEST.schemaVersion);
+
+  const ifrLow = definitions.find((item) => item.id === 'base-ifr-low');
+  const ifrHigh = definitions.find((item) => item.id === 'base-ifr-high');
+  assert.ok(ifrLow && ifrHigh);
+  assert.notEqual(ifrLow.url, ifrHigh.url);
+  assert.ok(ifrLow.fallbackUrls.length >= 2);
+  assert.ok(ifrHigh.fallbackUrls.length >= 2);
 });
 
 test('persistBaseLayerId writes selected layer id to local storage', () => {

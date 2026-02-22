@@ -42,6 +42,9 @@ test('airspace type mapping covers tactical style hooks', () => {
   assert.equal(mapAirspaceKind({ CLASS: 'C' }), 'classBCD');
   assert.equal(mapAirspaceKind({ TYPE_CODE: 'Military Operations Area (MOA)' }), 'moa');
   assert.equal(mapAirspaceKind({ AIRSPACE_TYPE: 'Alert Area' }), 'alert');
+  assert.equal(mapAirspaceKind({ TYPE_CODE: 'A' }), 'alert');
+  assert.equal(mapAirspaceKind({ TYPE_CODE: 'M' }), 'moa');
+  assert.equal(mapAirspaceKind({ TYPE_CODE: 'R' }), 'restricted');
   assert.equal(mapAirspaceKind({ NAME: 'R-5107 Restricted Area' }), 'restricted');
   assert.equal(mapAirspaceKind({ TYPE: 'Unknown Experimental' }), 'fallback');
 });
