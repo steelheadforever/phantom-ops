@@ -1,3 +1,5 @@
 node_modules/
 tmp/
 .playwright-mcp/
+data/airspace/*.geojson
+.wrangler/

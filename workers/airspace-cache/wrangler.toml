@@ -1,0 +1,17 @@
+name = "airspace-cache"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+# Serve airspace GeoJSON at phantom-ops.net/data/airspace/*
+routes = [
+  { pattern = "phantom-ops.net/data/airspace/*", zone_name = "phantom-ops.net" }
+]
+
+# R2 bucket binding
+[[r2_buckets]]
+binding = "AIRSPACE_BUCKET"
+bucket_name = "phantom-airspace-data"
+
+# Refresh airspace data daily at 06:00 UTC
+[triggers]
+crons = ["0 6 * * *"]
