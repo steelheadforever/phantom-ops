@@ -19,7 +19,7 @@ export function buildTileProbeUrl(template, probe = DEFAULT_TILE_PROBE) {
     .replace('{y}', String(probe.y));
 }
 
-export async function validateTileEndpoint(template, { fetchImpl = globalThis.fetch, timeoutMs = 8000 } = {}) {
+export async function validateTileEndpoint(template, { fetchImpl = (...args) => fetch(...args), timeoutMs = 8000 } = {}) {
   if (typeof fetchImpl !== 'function') {
     throw new Error('fetch is not available for tile validation');
   }
@@ -52,7 +52,7 @@ export async function resolveHealthyTileEndpoint(primaryTemplate, fallbackTempla
   return { template: primaryTemplate, evidence };
 }
 
-export async function validateGeoJsonEndpoint(endpoint, { fetchImpl = globalThis.fetch, timeoutMs = 8000 } = {}) {
+export async function validateGeoJsonEndpoint(endpoint, { fetchImpl = (...args) => fetch(...args), timeoutMs = 8000 } = {}) {
   if (typeof fetchImpl !== 'function') {
     throw new Error('fetch is not available for geojson validation');
   }

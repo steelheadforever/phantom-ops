@@ -7,11 +7,11 @@ export class ArcGISAirspaceSource {
   constructor({
     endpoint = DEFAULT_ARCGIS_AIRSPACE_GEOJSON_ENDPOINT,
     fallbackEndpoints = [],
-    fetchImpl = globalThis.fetch,
+    fetchImpl,
   } = {}) {
     this.endpoint = endpoint;
     this.fallbackEndpoints = fallbackEndpoints;
-    this.fetchImpl = fetchImpl;
+    this.fetchImpl = fetchImpl ?? ((...args) => fetch(...args));
     this.endpointEvidence = [];
   }
 
