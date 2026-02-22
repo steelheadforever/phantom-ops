@@ -64,3 +64,19 @@ test('registration order does not alter deterministic render order', () => {
   assert.equal(manager.getLayerMeta('a').zIndex, LAYER_Z_INDEX.AIRSPACE);
   assert.equal(manager.getLayerMeta('c').zIndex, LAYER_Z_INDEX.DRAWINGS);
 });
+
+test('airspace layer z-order is above GARS and below drawings', () => {
+  const map = createMockMap();
+  const manager = new LayerManager(map).initializePanes();
+
+  manager.registerLayer('gars-layer', createMockLayer(), 'gars');
+  manager.registerLayer('airspace-layer', createMockLayer(), 'airspace');
+  manager.registerLayer('drawings-layer', createMockLayer(), 'drawings');
+
+  const garsMeta = manager.getLayerMeta('gars-layer');
+  const airspaceMeta = manager.getLayerMeta('airspace-layer');
+  const drawingsMeta = manager.getLayerMeta('drawings-layer');
+
+  assert.ok(garsMeta.zIndex < airspaceMeta.zIndex);
+  assert.ok(airspaceMeta.zIndex < drawingsMeta.zIndex);
+});

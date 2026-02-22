@@ -1,6 +1,21 @@
+import { LayerManager } from './LayerManager.js';
+import { wireDimmerControl } from '../ui/dimmerControl.js';
+import { AirspaceSourceService, ArcGISAirspaceSource } from '../services/airspace/AirspaceSourceService.js';
+import { getAirspaceStyle } from '../services/airspace/airspaceStyle.js';
+
 export class MapCore {
-  constructor() {
+  constructor({
+    airspaceEndpoint,
+    airspaceSource,
+    airspaceSourceService,
+  } = {}) {
     this.map = null;
+    this.layerManager = null;
+    this.baseLayers = null;
+    this.airspaceLayer = null;
+
+    this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({ endpoint: airspaceEndpoint });
+    this.airspaceSourceService = airspaceSourceService ?? new AirspaceSourceService(this.airspaceSource);
   }
 
   init() {
@@ -9,6 +24,8 @@ export class MapCore {
       zoom: 5,
       zoomControl: true,
     });
+
+    this.layerManager = new LayerManager(this.map).initializePanes();
 
     const osmBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors',
@@ -25,28 +42,86 @@ export class MapCore {
       attribution: '&copy; OpenTopoMap contributors',
     });
 
-    satellite.addTo(this.map);
+    this.#registerBaseLayer('base-satellite', satellite);
+    this.#registerBaseLayer('base-terrain', topoMap);
+    this.#registerBaseLayer('base-street', osmBase);
 
-    const baseLayers = {
+    this.layerManager.showLayer('base-satellite');
+
+    this.airspaceLayer = L.geoJSON(null, {
+      style: getAirspaceStyle,
+    });
+    const airspaceOptions = this.layerManager.registerLayer('airspace-arcgis', this.airspaceLayer, 'airspace');
+    if (typeof this.airspaceLayer.options === 'object') {
+      Object.assign(this.airspaceLayer.options, airspaceOptions);
+    }
+
+    this.baseLayers = {
       Satellite: satellite,
       Terrain: topoMap,
       'Street Map': osmBase,
     };
 
-    L.control.layers(baseLayers, null, { position: 'topright' }).addTo(this.map);
+    const overlays = {
+      'Airspace (ArcGIS)': this.airspaceLayer,
+    };
+
+    L.control.layers(this.baseLayers, overlays, { position: 'topright' }).addTo(this.map);
+
+    this.map.on('baselayerchange', (event) => this.#syncBaseLayer(event.layer));
+    this.map.on('overlayadd', (event) => {
+      if (event.layer === this.airspaceLayer) {
+        this.layerManager.setLayerVisibility('airspace-arcgis', true);
+      }
+    });
+    this.map.on('overlayremove', (event) => {
+      if (event.layer === this.airspaceLayer) {
+        this.layerManager.setLayerVisibility('airspace-arcgis', false);
+      }
+    });
 
     return this.map;
   }
 
+  async loadAirspaceData() {
+    if (!this.airspaceLayer || !this.airspaceSourceService) return;
+
+    const featureCollection = await this.airspaceSourceService.loadAirspaceFeatureCollection();
+    this.airspaceLayer.clearLayers();
+    this.airspaceLayer.addData(featureCollection);
+  }
+
   setupDimmer() {
-    const dimOverlay = document.getElementById('dim-overlay');
     const dimSlider = document.getElementById('dimmer');
     const dimValue = document.getElementById('dim-value');
 
-    dimSlider.addEventListener('input', (e) => {
-      const val = e.target.value;
-      dimOverlay.style.background = `rgba(0, 0, 0, ${val / 100})`;
-      dimValue.textContent = `${val}%`;
+    if (!dimSlider || !dimValue || !this.layerManager) {
+      return null;
+    }
+
+    return wireDimmerControl({
+      layerManager: this.layerManager,
+      sliderEl: dimSlider,
+      valueEl: dimValue,
     });
+  }
+
+  setAirspaceVisibility(visible) {
+    if (!this.layerManager) return;
+    this.layerManager.setLayerVisibility('airspace-arcgis', visible);
+  }
+
+  #registerBaseLayer(layerId, layer) {
+    const options = this.layerManager.registerLayer(layerId, layer, 'base');
+    if (typeof layer.options === 'object') {
+      Object.assign(layer.options, options);
+    }
+  }
+
+  #syncBaseLayer(activeLayer) {
+    for (const [layerId, entry] of this.layerManager.layers.entries()) {
+      if (entry.kind !== 'base') continue;
+      this.layerManager.setLayerVisibility(layerId, entry.layer === activeLayer);
+    }
   }
 }

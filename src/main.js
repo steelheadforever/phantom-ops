@@ -5,6 +5,9 @@ import { CoordinateService } from './services/CoordinateService.js';
 const mapCore = new MapCore();
 const map = mapCore.init();
 mapCore.setupDimmer();
+mapCore.loadAirspaceData().catch((error) => {
+  console.warn('Airspace layer failed to load (backbone mode):', error);
+});
 
 const overlayService = new OverlayService(document.body);
 overlayService.createCenterCrosshair();
