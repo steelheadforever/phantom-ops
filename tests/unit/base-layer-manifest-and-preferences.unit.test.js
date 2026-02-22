@@ -42,6 +42,9 @@ test('manifest parsing creates expected base-layer definitions and metadata wiri
   assert.equal(vfr.label, 'VFR Sectional (FAA)');
   assert.equal(vfr.options.maxZoom, 12);
   assert.match(vfr.url, /^https:\/\/services\.arcgisonline\.com\/ArcGIS\/rest\/services\/Specialty\/World_Navigation_Charts\//);
+  assert.ok(Array.isArray(vfr.fallbackUrls));
+  assert.equal(vfr.fallbackUrls.length, 1);
+  assert.match(vfr.fallbackUrls[0], /^https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/World_Imagery\//);
   assert.equal(vfr.metadata.version, 'vfr-sectional');
   assert.equal(vfr.metadata.schemaVersion, BASE_LAYER_MANIFEST.schemaVersion);
 });

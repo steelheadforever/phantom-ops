@@ -15,6 +15,7 @@ export function createBaseLayerSourceDefinitions(manifest) {
       maxZoom: layer.maxZoom,
       attribution: layer.attribution,
     },
+    fallbackUrls: Array.isArray(layer.fallbackUrls) ? [...layer.fallbackUrls] : [],
     isDefault: Boolean(layer.isDefault),
     metadata: {
       cycle: layer.cycle ?? manifest?.cycle ?? null,

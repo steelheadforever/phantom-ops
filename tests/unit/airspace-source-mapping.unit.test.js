@@ -9,7 +9,7 @@ import {
 import { mapAirspaceKind } from '../../src/services/airspace/airspaceStyle.js';
 
 test('ArcGIS source adapter fetches configured endpoint and returns FeatureCollection', async () => {
-  const expected = { type: 'FeatureCollection', features: [] };
+  const expected = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: null }] };
   const calls = [];
 
   const source = new ArcGISAirspaceSource({
@@ -18,6 +18,8 @@ test('ArcGIS source adapter fetches configured endpoint and returns FeatureColle
       calls.push(url);
       return {
         ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
         json: async () => expected,
       };
     },
@@ -27,7 +29,7 @@ test('ArcGIS source adapter fetches configured endpoint and returns FeatureColle
   const actual = await service.loadAirspaceFeatureCollection();
 
   assert.deepEqual(actual, expected);
-  assert.deepEqual(calls, ['https://example.test/airspace.geojson']);
+  assert.deepEqual(calls, ['https://example.test/airspace.geojson', 'https://example.test/airspace.geojson']);
 });
 
 test('default ArcGIS airspace endpoint targets FAA special use airspace geojson query', () => {

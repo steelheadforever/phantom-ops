@@ -4,6 +4,7 @@ import { AirspaceSourceService, ArcGISAirspaceSource } from '../services/airspac
 import { getAirspaceStyle } from '../services/airspace/airspaceStyle.js';
 import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
+import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
 
 export class MapCore {
   constructor({
@@ -19,8 +20,12 @@ export class MapCore {
     this.airspaceLayer = null;
     this.baseLayerDefinitions = baseLayerDefinitions;
     this.storage = storage;
+    this.baseLayerById = new Map();
 
-    this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({ endpoint: airspaceEndpoint });
+    this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({
+      endpoint: airspaceEndpoint,
+      fallbackEndpoints: [],
+    });
     this.airspaceSourceService = airspaceSourceService ?? new AirspaceSourceService(this.airspaceSource);
   }
 
@@ -38,6 +43,7 @@ export class MapCore {
     this.baseLayerDefinitions.forEach((definition) => {
       const layer = createBaseTileLayer(definition);
       this.#registerBaseLayer(definition.id, layer);
+      this.baseLayerById.set(definition.id, { definition, layer });
       baseLayerLabels[definition.label] = layer;
     });
 
@@ -81,6 +87,10 @@ export class MapCore {
       }
     });
 
+    this.validateOperationalSources().catch((error) => {
+      console.warn('Operational source validation failed:', error);
+    });
+
     return this.map;
   }
 
@@ -105,6 +115,29 @@ export class MapCore {
       sliderEl: dimSlider,
       valueEl: dimValue,
     });
+  }
+
+  async validateOperationalSources() {
+    const aviationBaseIds = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
+
+    for (const layerId of aviationBaseIds) {
+      const entry = this.baseLayerById.get(layerId);
+      if (!entry) continue;
+
+      const { definition, layer } = entry;
+      const { template } = await resolveHealthyTileEndpoint(definition.url, definition.fallbackUrls ?? []);
+
+      if (template !== definition.url) {
+        definition.url = template;
+        if (typeof layer.setUrl === 'function') {
+          layer.setUrl(template);
+        }
+      }
+    }
+
+    if (this.airspaceSource && typeof this.airspaceSource.resolveEndpoint === 'function') {
+      await this.airspaceSource.resolveEndpoint();
+    }
   }
 
   setAirspaceVisibility(visible) {
