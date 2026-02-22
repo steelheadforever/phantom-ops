@@ -1,7 +1,9 @@
 const AIRSPACE_COLORS = Object.freeze({
-  classBCD: '#3da5ff',
-  moa: '#8e7dff',
-  alert: '#ffb347',
+  classB: '#4da6ff',
+  classC: '#2176cc',
+  classD: '#0a4a8a',
+  moa: '#ff8c00',
+  alert: '#ffd700',
   restricted: '#ff5f5f',
   fallback: '#d6dee7',
 });
@@ -13,7 +15,9 @@ const BASE_STYLE = Object.freeze({
 });
 
 export const AIRSPACE_STYLE_BY_KIND = Object.freeze({
-  classBCD: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.classBCD, fillColor: AIRSPACE_COLORS.classBCD, weight: 1.8 }),
+  classB: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.classB, fillColor: AIRSPACE_COLORS.classB, weight: 2.0 }),
+  classC: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.classC, fillColor: AIRSPACE_COLORS.classC, weight: 1.8 }),
+  classD: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.classD, fillColor: AIRSPACE_COLORS.classD, weight: 1.8 }),
   moa: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.moa, fillColor: AIRSPACE_COLORS.moa, weight: 1.8 }),
   alert: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.alert, fillColor: AIRSPACE_COLORS.alert, weight: 1.8 }),
   restricted: Object.freeze({ ...BASE_STYLE, color: AIRSPACE_COLORS.restricted, fillColor: AIRSPACE_COLORS.restricted, weight: 2.0 }),
@@ -45,8 +49,16 @@ function resolveRawType(properties = {}) {
 export function mapAirspaceKind(properties = {}) {
   const raw = resolveRawType(properties);
 
-  if (/\bCLASS\s*[BCD]\b/.test(raw) || /^B$|^C$|^D$/.test(raw) || /\bCLASS_B\b|\bCLASS_C\b|\bCLASS_D\b/.test(raw)) {
-    return 'classBCD';
+  if (/^B$/.test(raw) || /\bCLASS\s*B\b/.test(raw) || /\bCLASS_B\b/.test(raw)) {
+    return 'classB';
+  }
+
+  if (/^C$/.test(raw) || /\bCLASS\s*C\b/.test(raw) || /\bCLASS_C\b/.test(raw)) {
+    return 'classC';
+  }
+
+  if (/^D$/.test(raw) || /\bCLASS\s*D\b/.test(raw) || /\bCLASS_D\b/.test(raw)) {
+    return 'classD';
   }
 
   if (/\bMOA\b|\bMILITARY OPERATIONS AREA\b/.test(raw) || raw === 'M') {

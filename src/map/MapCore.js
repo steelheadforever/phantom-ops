@@ -1,25 +1,37 @@
 import { LayerManager } from './LayerManager.js';
 import { wireDimmerControl } from '../ui/dimmerControl.js';
 import { AirspaceSourceService, ArcGISAirspaceSource } from '../services/airspace/AirspaceSourceService.js';
-import { getAirspaceStyle } from '../services/airspace/airspaceStyle.js';
+import { ClassAirspaceSource } from '../services/airspace/ClassAirspaceSource.js';
+import { AIRSPACE_STYLE_BY_KIND, mapAirspaceKind } from '../services/airspace/airspaceStyle.js';
 import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
+import { AirspaceLayerControl } from '../ui/AirspaceLayerControl.js';
 
 const AVIATION_BASE_IDS = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
+
+export const AIRSPACE_LAYER_DEFS = [
+  { id: 'airspace-class-b', label: 'Class B', kind: 'classB' },
+  { id: 'airspace-class-c', label: 'Class C', kind: 'classC' },
+  { id: 'airspace-class-d', label: 'Class D', kind: 'classD' },
+  { id: 'airspace-moa', label: 'MOAs', kind: 'moa' },
+  { id: 'airspace-alert', label: 'Alert Areas', kind: 'alert' },
+  { id: 'airspace-restricted', label: 'Restricted Areas', kind: 'restricted' },
+];
 
 export class MapCore {
   constructor({
     airspaceEndpoint,
     airspaceSource,
     airspaceSourceService,
+    classAirspaceSource,
     baseLayerDefinitions = BASE_LAYER_SOURCE_DEFINITIONS,
     storage = globalThis?.localStorage ?? null,
   } = {}) {
     this.map = null;
     this.layerManager = null;
     this.baseLayers = null;
-    this.airspaceLayer = null;
+    this.airspaceLayers = new Map();
     this.baseLayerDefinitions = baseLayerDefinitions;
     this.storage = storage;
     this.baseLayerById = new Map();
@@ -31,6 +43,7 @@ export class MapCore {
       fallbackEndpoints: [],
     });
     this.airspaceSourceService = airspaceSourceService ?? new AirspaceSourceService(this.airspaceSource);
+    this.classAirspaceSource = classAirspaceSource ?? new ClassAirspaceSource();
   }
 
   init() {
@@ -66,35 +79,29 @@ export class MapCore {
       persistBaseLayerId(this.storage, initialBaseLayerId);
     }
 
-    this.airspaceLayer = L.geoJSON(null, {
-      style: getAirspaceStyle,
-    });
-    const airspaceOptions = this.layerManager.registerLayer('airspace-arcgis', this.airspaceLayer, 'airspace');
-    if (typeof this.airspaceLayer.options === 'object') {
-      Object.assign(this.airspaceLayer.options, airspaceOptions);
+    // Create 6 separate airspace layers
+    for (const def of AIRSPACE_LAYER_DEFS) {
+      const style = AIRSPACE_STYLE_BY_KIND[def.kind] ?? AIRSPACE_STYLE_BY_KIND.fallback;
+      const layer = L.geoJSON(null, { style: () => style });
+      const layerOptions = this.layerManager.registerLayer(def.id, layer, 'airspace');
+      if (typeof layer.options === 'object') {
+        Object.assign(layer.options, layerOptions);
+      }
+      this.airspaceLayers.set(def.id, layer);
+      this.layerManager.setLayerVisibility(def.id, true);
     }
 
     this.baseLayers = baseLayerLabels;
 
-    this.layerManager.setLayerVisibility('airspace-arcgis', true);
-
-    const overlays = {
-      'Airspace (ArcGIS)': this.airspaceLayer,
-    };
-
-    L.control.layers(this.baseLayers, overlays, { position: 'topright' }).addTo(this.map);
+    // Custom airspace layer control (replaces default overlay section)
+    const airspaceControl = new AirspaceLayerControl({
+      baseLayers: this.baseLayers,
+      airspaceLayerDefs: AIRSPACE_LAYER_DEFS,
+      layerManager: this.layerManager,
+    });
+    airspaceControl.addTo(this.map);
 
     this.map.on('baselayerchange', (event) => this.#syncBaseLayer(event.layer));
-    this.map.on('overlayadd', (event) => {
-      if (event.layer === this.airspaceLayer) {
-        this.layerManager.setLayerVisibility('airspace-arcgis', true);
-      }
-    });
-    this.map.on('overlayremove', (event) => {
-      if (event.layer === this.airspaceLayer) {
-        this.layerManager.setLayerVisibility('airspace-arcgis', false);
-      }
-    });
 
     this.#ensureSourceDebugIndicator();
     this.validateOperationalSources().catch((error) => {
@@ -105,13 +112,49 @@ export class MapCore {
   }
 
   async loadAirspaceData() {
-    if (!this.airspaceLayer || !this.airspaceSourceService) return;
+    if (!this.airspaceSourceService) return;
 
     const featureCollection = await this.airspaceSourceService.loadAirspaceFeatureCollection();
-    this.airspaceLayer.clearLayers();
-    this.airspaceLayer.addData(featureCollection);
-    if (typeof this.airspaceLayer.bringToFront === 'function') {
-      this.airspaceLayer.bringToFront();
+
+    // Distribute SUA features into per-type layers
+    for (const feature of featureCollection.features) {
+      const kind = mapAirspaceKind(feature.properties ?? {});
+      const layerId = this.#kindToLayerId(kind);
+      const layer = this.airspaceLayers.get(layerId);
+      if (layer) {
+        layer.addData(feature);
+      }
+    }
+  }
+
+  async loadClassAirspaceData() {
+    if (!this.classAirspaceSource) return;
+
+    const { classB, classC, classD } = await this.classAirspaceSource.fetchAllClasses();
+
+    const classLayerMap = {
+      'airspace-class-b': classB,
+      'airspace-class-c': classC,
+      'airspace-class-d': classD,
+    };
+
+    for (const [layerId, fc] of Object.entries(classLayerMap)) {
+      const layer = this.airspaceLayers.get(layerId);
+      if (layer && fc.features.length > 0) {
+        layer.addData(fc);
+      }
+    }
+  }
+
+  #kindToLayerId(kind) {
+    switch (kind) {
+      case 'classB': return 'airspace-class-b';
+      case 'classC': return 'airspace-class-c';
+      case 'classD': return 'airspace-class-d';
+      case 'moa': return 'airspace-moa';
+      case 'alert': return 'airspace-alert';
+      case 'restricted': return 'airspace-restricted';
+      default: return 'airspace-restricted'; // fallback features go to restricted
     }
   }
 
@@ -186,7 +229,9 @@ export class MapCore {
 
   setAirspaceVisibility(visible) {
     if (!this.layerManager) return;
-    this.layerManager.setLayerVisibility('airspace-arcgis', visible);
+    for (const def of AIRSPACE_LAYER_DEFS) {
+      this.layerManager.setLayerVisibility(def.id, visible);
+    }
   }
 
   #registerBaseLayer(layerId, layer) {

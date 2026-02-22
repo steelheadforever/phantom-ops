@@ -31,13 +31,22 @@ function createLeafletStub() {
       _renderedFeatures: [],
       addTo(targetMap) { targetMap.activeLayers.add(this); return this; },
       clearLayers() { this._renderedFeatures = []; },
-      addData(fc) { this._renderedFeatures = Array.isArray(fc?.features) ? fc.features : []; },
+      addData(data) { if (data?.type === 'Feature') { this._renderedFeatures.push(data); } else if (Array.isArray(data?.features)) { this._renderedFeatures.push(...data.features); } },
       getLayers() { return this._renderedFeatures; },
       setZIndex() {},
       bringToFront() {},
     }),
-    control: {
-      layers: () => ({ addTo() {} }),
+    control: Object.assign(
+      function () { const c = { onAdd: null, addTo() { if (c.onAdd) c.onAdd(map); } }; return c; },
+      { layers: () => ({ addTo() {} }) },
+    ),
+    DomUtil: {
+      create(tag, cls, parent) { const el = { tagName: tag, className: cls || '', style: {}, textContent: '', children: [], hasLayer() { return false; } }; if (parent) parent.children.push(el); return el; },
+    },
+    DomEvent: {
+      disableClickPropagation() {},
+      disableScrollPropagation() {},
+      on() {},
     },
   };
 }
@@ -78,14 +87,15 @@ test('airspace overlay is visible by default, renders features, and toggling upd
     mapCore.init();
     await mapCore.loadAirspaceData();
 
-    assert.equal(mapCore.layerManager.getLayerMeta('airspace-arcgis').visible, true);
-    assert.ok(mapCore.airspaceLayer.getLayers().length > 0);
+    assert.equal(mapCore.layerManager.getLayerMeta('airspace-restricted').visible, true);
+    const restrictedLayer = mapCore.airspaceLayers.get('airspace-restricted');
+    assert.ok(restrictedLayer.getLayers().length > 0);
 
     mapCore.setAirspaceVisibility(false);
-    assert.equal(mapCore.layerManager.getLayerMeta('airspace-arcgis').visible, false);
+    assert.equal(mapCore.layerManager.getLayerMeta('airspace-restricted').visible, false);
 
     mapCore.setAirspaceVisibility(true);
-    assert.equal(mapCore.layerManager.getLayerMeta('airspace-arcgis').visible, true);
+    assert.equal(mapCore.layerManager.getLayerMeta('airspace-restricted').visible, true);
   } finally {
     globalThis.L = priorL;
   }

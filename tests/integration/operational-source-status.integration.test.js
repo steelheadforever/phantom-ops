@@ -32,8 +32,17 @@ function createLeafletStub() {
       setZIndex() {},
       bringToFront() {},
     }),
-    control: {
-      layers: () => ({ addTo() {} }),
+    control: Object.assign(
+      function () { const c = { onAdd: null, addTo() { if (c.onAdd) c.onAdd(map); } }; return c; },
+      { layers: () => ({ addTo() {} }) },
+    ),
+    DomUtil: {
+      create(tag, cls, parent) { const el = { tagName: tag, className: cls || '', style: {}, textContent: '', children: [], hasLayer() { return false; } }; if (parent) parent.children.push(el); return el; },
+    },
+    DomEvent: {
+      disableClickPropagation() {},
+      disableScrollPropagation() {},
+      on() {},
     },
   };
 }

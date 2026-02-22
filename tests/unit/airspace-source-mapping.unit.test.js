@@ -38,8 +38,8 @@ test('default ArcGIS airspace endpoint targets FAA special use airspace geojson 
 });
 
 test('airspace type mapping covers tactical style hooks', () => {
-  assert.equal(mapAirspaceKind({ TYPE: 'Class B' }), 'classBCD');
-  assert.equal(mapAirspaceKind({ CLASS: 'C' }), 'classBCD');
+  assert.equal(mapAirspaceKind({ TYPE: 'Class B' }), 'classB');
+  assert.equal(mapAirspaceKind({ CLASS: 'C' }), 'classC');
   assert.equal(mapAirspaceKind({ TYPE_CODE: 'Military Operations Area (MOA)' }), 'moa');
   assert.equal(mapAirspaceKind({ AIRSPACE_TYPE: 'Alert Area' }), 'alert');
   assert.equal(mapAirspaceKind({ TYPE_CODE: 'A' }), 'alert');
