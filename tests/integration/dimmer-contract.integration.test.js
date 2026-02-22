@@ -36,22 +36,29 @@ function createOpacitySpyLayer() {
   };
 }
 
-test('dimmer affects map imagery only (base layers)', () => {
+test('dimmer affects active base imagery set (including VFR/IFR) and not overlays', () => {
   const map = createMockMap();
   const manager = new LayerManager(map).initializePanes();
 
-  const base = createOpacitySpyLayer();
+  const satellite = createOpacitySpyLayer();
+  const vfr = createOpacitySpyLayer();
+  const ifrLow = createOpacitySpyLayer();
   const gars = createOpacitySpyLayer();
   const airspace = createOpacitySpyLayer();
 
-  manager.registerLayer('satellite', base, 'base');
+  manager.registerLayer('base-satellite', satellite, 'base');
+  manager.registerLayer('base-vfr-sectional', vfr, 'base');
+  manager.registerLayer('base-ifr-low', ifrLow, 'base');
   manager.registerLayer('gars-overlay', gars, 'gars');
   manager.registerLayer('airspace-overlay', airspace, 'airspace');
 
+  manager.showLayer('base-vfr-sectional');
   const opacity = manager.setBaseImageryDim(40);
 
   assert.equal(opacity, 0.6);
-  assert.deepEqual(base.calls, [0.6]);
+  assert.deepEqual(satellite.calls, [0.6]);
+  assert.deepEqual(vfr.calls, [0.6]);
+  assert.deepEqual(ifrLow.calls, [0.6]);
   assert.deepEqual(gars.calls, []);
   assert.deepEqual(airspace.calls, []);
 });

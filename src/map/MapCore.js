@@ -2,17 +2,20 @@ import { LayerManager } from './LayerManager.js';
 import { wireDimmerControl } from '../ui/dimmerControl.js';
 import { AirspaceSourceService, ArcGISAirspaceSource } from '../services/airspace/AirspaceSourceService.js';
 import { getAirspaceStyle } from '../services/airspace/airspaceStyle.js';
+import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
 
 export class MapCore {
   constructor({
     airspaceEndpoint,
     airspaceSource,
     airspaceSourceService,
+    baseLayerDefinitions = BASE_LAYER_SOURCE_DEFINITIONS,
   } = {}) {
     this.map = null;
     this.layerManager = null;
     this.baseLayers = null;
     this.airspaceLayer = null;
+    this.baseLayerDefinitions = baseLayerDefinitions;
 
     this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({ endpoint: airspaceEndpoint });
     this.airspaceSourceService = airspaceSourceService ?? new AirspaceSourceService(this.airspaceSource);
@@ -27,26 +30,18 @@ export class MapCore {
 
     this.layerManager = new LayerManager(this.map).initializePanes();
 
-    const osmBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 18,
+    const defaultBaseLayerId = this.baseLayerDefinitions.find((item) => item.isDefault)?.id ?? this.baseLayerDefinitions[0]?.id;
+    const baseLayerLabels = {};
+
+    this.baseLayerDefinitions.forEach((definition) => {
+      const layer = createBaseTileLayer(definition);
+      this.#registerBaseLayer(definition.id, layer);
+      baseLayerLabels[definition.label] = layer;
     });
 
-    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 18,
-      attribution: 'Imagery &copy; Esri',
-    });
-
-    const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: '&copy; OpenTopoMap contributors',
-    });
-
-    this.#registerBaseLayer('base-satellite', satellite);
-    this.#registerBaseLayer('base-terrain', topoMap);
-    this.#registerBaseLayer('base-street', osmBase);
-
-    this.layerManager.showLayer('base-satellite');
+    if (defaultBaseLayerId) {
+      this.layerManager.showLayer(defaultBaseLayerId);
+    }
 
     this.airspaceLayer = L.geoJSON(null, {
       style: getAirspaceStyle,
@@ -56,11 +51,7 @@ export class MapCore {
       Object.assign(this.airspaceLayer.options, airspaceOptions);
     }
 
-    this.baseLayers = {
-      Satellite: satellite,
-      Terrain: topoMap,
-      'Street Map': osmBase,
-    };
+    this.baseLayers = baseLayerLabels;
 
     const overlays = {
       'Airspace (ArcGIS)': this.airspaceLayer,

@@ -110,6 +110,10 @@ export class LayerManager {
     };
   }
 
+  getActiveBaseLayerId() {
+    return this.activeBaseLayerId;
+  }
+
   #getLayer(layerId) {
     const entry = this.layers.get(layerId);
     if (!entry) {
