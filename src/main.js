@@ -1,4 +1,4 @@
-import { MapCore, AIRSPACE_LAYER_DEFS } from './map/MapCore.js';
+import { MapCore, AIRSPACE_LAYER_DEFS, CGRS_LAYER_DEF } from './map/MapCore.js';
 import { OverlayService } from './ui/OverlayService.js';
 import { CoordinateService } from './services/CoordinateService.js';
 import { TopBar } from './ui/TopBar.js';
@@ -18,7 +18,7 @@ new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 // Bottom chrome
 const bottomBar = new BottomBar().mount(document.body);
 new BaseLayerMenu({ mapCore, bottomBar }).mount();
-new AirspaceMenu({ layerManager: mapCore.layerManager, airspaceLayerDefs: AIRSPACE_LAYER_DEFS, bottomBar }).mount();
+new AirspaceMenu({ layerManager: mapCore.layerManager, airspaceLayerDefs: [CGRS_LAYER_DEF, ...AIRSPACE_LAYER_DEFS], bottomBar }).mount();
 new BrightnessSlider({ layerManager: mapCore.layerManager, bottomBar }).mount();
 
 // Center crosshair & coordinate display

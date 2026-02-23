@@ -5,8 +5,11 @@ import { AIRSPACE_STYLE_BY_KIND, mapAirspaceKind } from '../services/airspace/ai
 import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
+import { CGRSLayer } from '../services/cgrs/CGRSLayer.js';
 
 const AVIATION_BASE_IDS = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
+
+export const CGRS_LAYER_DEF = Object.freeze({ id: 'cgrs-grid', label: 'Kill Box' });
 
 export const AIRSPACE_LAYER_DEFS = [
   { id: 'airspace-class-b', label: 'Class B', kind: 'classB' },
@@ -52,6 +55,11 @@ export class MapCore {
     });
 
     this.layerManager = new LayerManager(this.map).initializePanes();
+
+    // CGRS killbox grid — lowest overlay layer (pane z-index 300, below airspace at 400)
+    this.cgrsLayer = new CGRSLayer(this.map);
+    this.layerManager.registerLayer(CGRS_LAYER_DEF.id, this.cgrsLayer.group, 'gars');
+    this.layerManager.setLayerVisibility(CGRS_LAYER_DEF.id, true);
 
     const baseLayerLabels = {};
 
