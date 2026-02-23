@@ -4,7 +4,12 @@
 //   1 | 2 | 3   ← North
 //   4 | 5 | 6
 //   7 | 8 | 9   ← South
-// Killbox naming uses GARS alphanumeric convention (globally unambiguous).
+//
+// Killbox naming: {2-digit lat number}{2-letter lon code}{optional keypad}
+//   Lat number  = floor((lat + 90) × 2) − 200   (e.g. 29.5°N → 39)
+//   Lon letters = base-26 encode of (lonBandIdx + 340), A–Z standard alphabet
+//                 (e.g. −98.5°W → lonBandIdx 163 → 503 → "TJ")
+//   Example: 39TJ9 = lat band 39, lon band TJ, keypad 9 (SE)
 // Datum: WGS84
 
 export const TEXAS_BOUNDS = Object.freeze({
@@ -14,8 +19,8 @@ export const TEXAS_BOUNDS = Object.freeze({
   maxLon: -93.5,
 });
 
-// 24-character GARS/CGRS alphabet (no I or O)
-const LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+// Standard 26-character alphabet (A–Z, includes I and O)
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
 // Cell sizes in decimal degrees
 const KILLBOX_SIZE = 0.5;       // 30 minutes
@@ -35,15 +40,17 @@ export function latLonToCGRS(lat, lon, precision = 'killbox') {
   const lonBandIdx = Math.floor((lon + 180) * 2);   // 0-based
   const latBandIdx = Math.floor((lat + 90)  * 2);   // 0-based
 
-  const lonBandNum = lonBandIdx + 1;
-  const bandStr    = String(lonBandNum).padStart(3, '0');
-  const latBand    = LETTERS[Math.floor(latBandIdx / 24)] + LETTERS[latBandIdx % 24];
+  // Lat: 2-digit number (floor((lat+90)*2) − 200)
+  const latBandNum = latBandIdx - 200;
+  // Lon: 2-letter code using standard A–Z alphabet, offset 340
+  const combinedLon = lonBandIdx + 340;
+  const lonBand = LETTERS[Math.floor(combinedLon / 26)] + LETTERS[combinedLon % 26];
 
   const bandSwLon = lonBandIdx * KILLBOX_SIZE - 180;
   const bandSwLat = latBandIdx * KILLBOX_SIZE - 90;
 
   if (precision === 'killbox') {
-    return { code: bandStr + latBand, swLat: bandSwLat, swLon: bandSwLon, neLat: bandSwLat + KILLBOX_SIZE, neLon: bandSwLon + KILLBOX_SIZE };
+    return { code: String(latBandNum) + lonBand, swLat: bandSwLat, swLon: bandSwLon, neLat: bandSwLat + KILLBOX_SIZE, neLon: bandSwLon + KILLBOX_SIZE };
   }
 
   // --- Keypad (10-min, telephone layout: 1=NW, 9=SE) ---
@@ -58,7 +65,7 @@ export function latLonToCGRS(lat, lon, precision = 'killbox') {
   const kSwLat = bandSwLat + kRow * KEYPAD_SIZE;
 
   return {
-    code: bandStr + latBand + keypad,
+    code: String(latBandNum) + lonBand + keypad,
     swLat: kSwLat, swLon: kSwLon,
     neLat: kSwLat + KEYPAD_SIZE, neLon: kSwLon + KEYPAD_SIZE,
   };
@@ -87,16 +94,17 @@ export function* iterateCGRSCells(bounds, precision) {
   const latBandEnd   = Math.ceil((maxLat + 90)   * 2);
 
   for (let latB = latBandStart; latB < latBandEnd; latB++) {
-    const bandSwLat = latB * KILLBOX_SIZE - 90;
-    const latBand   = LETTERS[Math.floor(latB / 24)] + LETTERS[latB % 24];
+    const bandSwLat  = latB * KILLBOX_SIZE - 90;
+    const latBandNum = latB - 200;
 
     for (let lonB = lonBandStart; lonB < lonBandEnd; lonB++) {
-      const bandStr   = String(lonB + 1).padStart(3, '0');
-      const bandSwLon = lonB * KILLBOX_SIZE - 180;
+      const combinedLon = lonB + 340;
+      const lonBand     = LETTERS[Math.floor(combinedLon / 26)] + LETTERS[combinedLon % 26];
+      const bandSwLon   = lonB * KILLBOX_SIZE - 180;
 
       if (precision === 'killbox') {
         yield {
-          code: bandStr + latBand,
+          code: String(latBandNum) + lonBand,
           swLat: bandSwLat, swLon: bandSwLon,
           neLat: bandSwLat + KILLBOX_SIZE, neLon: bandSwLon + KILLBOX_SIZE,
         };
@@ -115,7 +123,7 @@ export function* iterateCGRSCells(bounds, precision) {
 
           const keypad = (2 - kRow) * 3 + kCol + 1;
           yield {
-            code: bandStr + latBand + keypad,
+            code: String(latBandNum) + lonBand + keypad,
             swLat: kSwLat, swLon: kSwLon,
             neLat: kSwLat + KEYPAD_SIZE, neLon: kSwLon + KEYPAD_SIZE,
           };
