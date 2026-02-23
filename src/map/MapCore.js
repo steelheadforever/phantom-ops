@@ -48,8 +48,8 @@ export class MapCore {
 
   init() {
     this.map = L.map('map', {
-      center: [39.0, -98.0],
-      zoom: 5,
+      center: [29.535, -98.279],
+      zoom: 12,
       zoomControl: true,
     });
 
