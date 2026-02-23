@@ -6,10 +6,15 @@ import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerS
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
 import { CGRSLayer } from '../services/cgrs/CGRSLayer.js';
+import { NavaidLayer } from '../services/navaids/NavaidLayer.js';
+import { FixLayer } from '../services/navaids/FixLayer.js';
 
 const AVIATION_BASE_IDS = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
 
 export const CGRS_LAYER_DEF = Object.freeze({ id: 'cgrs-grid', label: 'Kill Box' });
+export const NAVAID_LAYER_DEF = Object.freeze({ id: 'navaids', label: 'Navaids' });
+export const FIX_HIGH_LAYER_DEF = Object.freeze({ id: 'ifr-fixes-high', label: 'IFR High Fixes' });
+export const FIX_LOW_LAYER_DEF = Object.freeze({ id: 'ifr-fixes-low', label: 'IFR Low Fixes' });
 
 export const AIRSPACE_LAYER_DEFS = [
   { id: 'airspace-class-b', label: 'Class B', kind: 'classB' },
@@ -60,6 +65,19 @@ export class MapCore {
     this.cgrsLayer = new CGRSLayer(this.map);
     this.layerManager.registerLayer(CGRS_LAYER_DEF.id, this.cgrsLayer.group, 'gars');
     this.layerManager.setLayerVisibility(CGRS_LAYER_DEF.id, true);
+
+    // Navaids & IFR fixes — pane z-index 450, zoom-gated at >=8
+    this.navaidLayer = new NavaidLayer(this.map);
+    this.layerManager.registerLayer(NAVAID_LAYER_DEF.id, this.navaidLayer.group, 'navaids');
+    this.layerManager.setLayerVisibility(NAVAID_LAYER_DEF.id, true);
+
+    this.fixHighLayer = new FixLayer(this.map, 'H');
+    this.layerManager.registerLayer(FIX_HIGH_LAYER_DEF.id, this.fixHighLayer.group, 'navaids');
+    this.layerManager.setLayerVisibility(FIX_HIGH_LAYER_DEF.id, true);
+
+    this.fixLowLayer = new FixLayer(this.map, 'L');
+    this.layerManager.registerLayer(FIX_LOW_LAYER_DEF.id, this.fixLowLayer.group, 'navaids');
+    this.layerManager.setLayerVisibility(FIX_LOW_LAYER_DEF.id, true);
 
     const baseLayerLabels = {};
 

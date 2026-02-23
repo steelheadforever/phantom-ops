@@ -4,6 +4,7 @@ const META_BY_KIND = Object.freeze({
   base: { paneId: PANE_IDS.BASE_MAP, zIndex: LAYER_Z_INDEX.BASE_MAP },
   gars: { paneId: PANE_IDS.GARS, zIndex: LAYER_Z_INDEX.GARS },
   airspace: { paneId: PANE_IDS.AIRSPACE, zIndex: LAYER_Z_INDEX.AIRSPACE },
+  navaids: { paneId: PANE_IDS.NAVAIDS, zIndex: LAYER_Z_INDEX.NAVAIDS },
   drawings: { paneId: PANE_IDS.DRAWINGS, zIndex: LAYER_Z_INDEX.DRAWINGS },
 });
 
