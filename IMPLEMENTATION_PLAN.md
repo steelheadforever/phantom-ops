@@ -84,8 +84,15 @@ GARS must always render **below** airspace and below future drawing layers.
 - `src/services/GeoFilterService.js`
 - `src/services/DataService.js`
 - `src/ui/OverlayService.js`
-- `src/ui/StatusBar.js`
-- `src/styles/` — CSS modules (map, controls, status bar, overlays)
+- `src/ui/TopBar.js` — top bar with hamburger, cross insignia, title, UTC clock
+- `src/ui/SideMenu.js` — slide-out overlay menu (Plan / Study stubs)
+- `src/ui/BottomBar.js` — bottom bar with coordinate display and control slots
+- `src/ui/BaseLayerMenu.js` — globe icon popup for base layer selection
+- `src/ui/AirspaceMenu.js` — quadrilateral icon popup for airspace layer toggles
+- `src/ui/BrightnessSlider.js` — sun icon popup for map brightness
+- `src/ui/popupManager.js` — shared singleton to ensure one popup open at a time
+- `src/assets/` — static assets (558 cross insignia PNG)
+- `src/styles/` — CSS modules (map, top-bar, bottom-bar, overlays, source-debug)
 - `docs/` — design notes, data-source register, subagent handoff docs
 
 ### Subagent ownership boundaries
@@ -155,15 +162,27 @@ Each dataset entry must include:
 
 ## 7) UX Specification
 
-## 7.1 Bottom Status Bar
-- Persistent bottom bar
-- Displays cursor coordinate in current format
-- Click/tap coordinate value cycles format in fixed order:
-  1. MGRS
-  2. DMS
-  3. DMM
-  4. back to MGRS
-- If cursor is off-map/unknown, show `--`
+## 7.0 Design Language
+- **Theme:** 558 FTS colors — deep royal blue (`#1e3190`) and gold (`#f5a800`)
+- **Font:** B612 Mono throughout (avionics display aesthetic)
+- **Bars:** Semi-transparent dark grey (`rgba(28,28,28,0.72)`) with `backdrop-filter: blur(10px)`
+- **Borders:** Subtle blue (`rgba(43,58,171,0.45)`)
+- All controls consolidated into top bar and bottom bar — no floating panels
+
+## 7.1 Top Bar
+- Fixed 44px bar across full width
+- Left to right: hamburger menu → 558 cross insignia → `PHANTOM-OPS` (B612 Mono italic, gold) → 558 cross insignia → spacer → UTC clock (`HH:MM:SSZ`, ticks every second)
+- Hamburger opens a slide-over side menu
+
+## 7.2 Side Menu
+- Slides in from left, overlays map (200px wide)
+- Contains: **PLAN** and **STUDY** buttons (stubbed, disabled — future implementation)
+- Closes on backdrop click or Escape key
+
+## 7.3 Bottom Bar
+- Fixed 40px bar across full width
+- **Left:** cursor coordinate display — B612 Mono, cycles MGRS → DMS → DMM → MGRS on click; shows `--` when off-map
+- **Right (left to right):** quadrilateral button → globe button → sun button
 
 ### Coordinate output precision (authoritative)
 - **MGRS:** 10-digit grid (1m precision)
@@ -171,18 +190,28 @@ Each dataset entry must include:
 - **DMS:** 2 decimal places for seconds
 - Use hemisphere notation (`N/S`, `E/W`) for DMS/DMM
 
-## 7.2 Center Crosshair
-- Fixed visual element at viewport center
+## 7.4 Bottom Bar — Globe Button (Base Layer)
+- Globe SVG icon; click opens vertical popup menu rising from bottom bar
+- Radio selection among: Satellite, Terrain, Street Map, VFR Sectional, IFR Low, IFR High
+- Selection persists to localStorage
+- Only one popup open at a time (shared `popupManager`)
+
+## 7.5 Bottom Bar — Quadrilateral Button (Airspace)
+- Quadrilateral SVG icon; click opens vertical popup menu
+- Checkbox toggles for: Class B, Class C, Class D, MOAs, Alert Areas, Restricted Areas
+- All checked by default
+
+## 7.6 Bottom Bar — Sun Button (Brightness)
+- Sun SVG icon; click opens vertical slider popup
+- Range 0–85%; dims base map imagery only (not overlays, crosshair, or UI)
+- **Dimmer behavior:** applies to base map raster only, not airspace polygons, crosshair, bars, or future drawings
+
+## 7.7 Center Crosshair
+- Fixed visual element centered within the map area (between top and bottom bars)
 - Non-interactive, always visible
 - Must not block map gestures
 
-## 7.3 Layer Controls
-- Toggle visibility for each layer
-- Opacity/dimming controls for raster layers
-- Preserve current dimmer behavior and make it compatible with VFR/IFR layers
-- **Dimmer behavior:** dimmer applies to map imagery only (base map/raster presentation), not UI controls, crosshair, status bar, airspace overlays, GARS labels, or future drawings
-
-## 7.4 GPS Points (100 NM)
+## 7.8 GPS Points (100 NM)
 - Radius anchored to map center (crosshair), not cursor
 - Auto-refresh on map movement (debounced)
 - Show only points where distance(center, point) <= 100 NM
@@ -230,6 +259,14 @@ Each dataset entry must include:
 - ~~Add 28-day update check workflow~~ — **Done:** Cloudflare Worker cron refreshes Class B/C/D from FAA ArcGIS daily; data served from R2 at `/data/airspace/*`
 - Surface “last updated” metadata in UI
 - Acceptance: operator can verify data currency quickly
+
+## Phase 6 — UI Redesign ✅ Done (2026-02-22)
+- Established 558 FTS design language: blue/gold theme, B612 Mono font, semi-transparent bars
+- Top bar: hamburger, 558 cross insignia, PHANTOM-OPS title, live UTC clock
+- Side menu: slide-over overlay with Plan/Study stubs
+- Bottom bar: coordinate display left; globe/airspace/brightness controls right
+- Replaced floating dimmer and top-right layer panel with bottom-bar popups
+- Added shared `popupManager` to enforce single-popup-at-a-time behavior
 
 ---
 
@@ -323,3 +360,4 @@ v1 is complete when:
 ---
 
 Owner intent captured from project discussion and approved constraints as of 2026-02-22.
+Last updated: 2026-02-22 (Phase 6 UI redesign complete).
