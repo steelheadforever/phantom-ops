@@ -1,7 +1,7 @@
 .source-debug-indicator {
   position: fixed;
   left: 12px;
-  bottom: 12px;
+  bottom: calc(var(--bottom-bar-height) + 8px);
   z-index: 1200;
   background: rgba(15, 18, 22, 0.82);
   color: #d5dde7;

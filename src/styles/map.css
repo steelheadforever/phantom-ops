@@ -1,14 +1,26 @@
+:root {
+  --top-bar-height: 44px;
+  --bottom-bar-height: 40px;
+  --blue-primary: #1e3190;
+  --blue-border: rgba(43, 58, 171, 0.45);
+  --gold: #f5a800;
+  --bg-bar: rgba(28, 28, 28, 0.72);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: 'B612 Mono', ui-monospace, monospace;
   background: #0a0a0a;
   overflow: hidden;
 }
 
 #map {
-  width: 100vw;
-  height: 100vh;
+  position: absolute;
+  top: var(--top-bar-height);
+  left: 0;
+  right: 0;
+  bottom: var(--bottom-bar-height);
   background: #000;
 }
 

@@ -1,12 +1,10 @@
 import { LayerManager } from './LayerManager.js';
-import { wireDimmerControl } from '../ui/dimmerControl.js';
 import { AirspaceSourceService, ArcGISAirspaceSource } from '../services/airspace/AirspaceSourceService.js';
 import { ClassAirspaceSource } from '../services/airspace/ClassAirspaceSource.js';
 import { AIRSPACE_STYLE_BY_KIND, mapAirspaceKind } from '../services/airspace/airspaceStyle.js';
 import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
-import { AirspaceLayerControl } from '../ui/AirspaceLayerControl.js';
 
 const AVIATION_BASE_IDS = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
 
@@ -93,16 +91,6 @@ export class MapCore {
 
     this.baseLayers = baseLayerLabels;
 
-    // Custom airspace layer control (replaces default overlay section)
-    const airspaceControl = new AirspaceLayerControl({
-      baseLayers: this.baseLayers,
-      airspaceLayerDefs: AIRSPACE_LAYER_DEFS,
-      layerManager: this.layerManager,
-    });
-    airspaceControl.addTo(this.map);
-
-    this.map.on('baselayerchange', (event) => this.#syncBaseLayer(event.layer));
-
     this.#ensureSourceDebugIndicator();
     this.validateOperationalSources().catch((error) => {
       console.warn('Operational source validation failed:', error);
@@ -158,19 +146,9 @@ export class MapCore {
     }
   }
 
-  setupDimmer() {
-    const dimSlider = document.getElementById('dimmer');
-    const dimValue = document.getElementById('dim-value');
-
-    if (!dimSlider || !dimValue || !this.layerManager) {
-      return null;
-    }
-
-    return wireDimmerControl({
-      layerManager: this.layerManager,
-      sliderEl: dimSlider,
-      valueEl: dimValue,
-    });
+  switchBaseLayer(layerId) {
+    this.layerManager.showLayer(layerId);
+    persistBaseLayerId(this.storage, layerId);
   }
 
   async validateOperationalSources() {
