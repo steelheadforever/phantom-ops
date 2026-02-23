@@ -3,3 +3,4 @@ tmp/
 .playwright-mcp/
 data/airspace/*.geojson
 .wrangler/
+.claude/
