@@ -34,6 +34,7 @@ export class PointPopup {
     // Field refs
     this._titleEl = null;
     this._nameInput = null;
+    this._labelEyeBtn = null;
     this._locationInput = null;
     this._symbolSelect = null;
     this._transparencyInput = null;
@@ -50,6 +51,7 @@ export class PointPopup {
 
     this._titleEl = el.querySelector('.shape-popup__title');
     this._nameInput = el.querySelector('.sp-name');
+    this._labelEyeBtn = el.querySelector('.lp-label-eye');
     this._locationInput = el.querySelector('.sp-location');
     this._symbolSelect = el.querySelector('.lp-dash-select');
     this._transparencyInput = el.querySelector('.sp-transparency');
@@ -79,6 +81,7 @@ export class PointPopup {
     this._locationInput.disabled = true;
     this._symbolSelect.value = 'waypoint';
     this._selectColor('#4da6ff');
+    this._updateLabelEye(false);
     const pct = Math.round((1 - (this._shapeManager.lastOpacity ?? 0.26)) * 100);
     this._transparencyInput.value = pct;
     this._transparencyLabel.textContent = `${pct}% transparent`;
@@ -104,6 +107,7 @@ export class PointPopup {
     this._locationInput.disabled = false;
     this._symbolSelect.value = rec.symbol ?? 'waypoint';
     this._selectColor(rec.color);
+    this._updateLabelEye(rec.showLabel ?? false);
 
     const pct = Math.round((1 - rec.opacity) * 100);
     this._transparencyInput.value = pct;
@@ -119,6 +123,7 @@ export class PointPopup {
     this._isPre = false;
     this._locationInput.value = this._fmt(rec.lat, rec.lng);
     this._locationInput.disabled = false;
+    this._updateLabelEye(rec.showLabel ?? false);
   }
 
   close() {
@@ -155,7 +160,12 @@ export class PointPopup {
 
       <div class="shape-popup__field">
         <label>Name</label>
-        <input class="sp-name sp-input" type="text" autocomplete="off" />
+        <div class="lp-name-row">
+          <input class="sp-name sp-input" type="text" autocomplete="off" />
+          <button class="lp-label-eye" title="Show name on map">
+            ${this._eyeClosedSvg()}
+          </button>
+        </div>
       </div>
 
       <div class="shape-popup__field">
@@ -215,6 +225,16 @@ export class PointPopup {
       this._shapeManager.updateShape(this._currentId, { symbol: this._symbolSelect.value });
     });
 
+    // Label eyeball toggle
+    this._labelEyeBtn.addEventListener('click', () => {
+      if (!this._currentId) return;
+      const rec = this._shapeManager.shapes.find((s) => s.id === this._currentId);
+      if (!rec) return;
+      const next = !(rec.showLabel ?? false);
+      this._shapeManager.updateShape(this._currentId, { showLabel: next });
+      this._updateLabelEye(next);
+    });
+
     // Color swatches
     this._el.querySelectorAll('.color-swatch').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -269,5 +289,24 @@ export class PointPopup {
     if (!this._coordinateService) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     const fmt = this._coordinateService.getCurrentFormat();
     return `${fmt}: ${this._coordinateService.formatCoordinate(lat, lng, fmt)}`;
+  }
+
+  _updateLabelEye(showLabel) {
+    if (!this._labelEyeBtn) return;
+    this._labelEyeBtn.classList.toggle('lp-label-eye--active', showLabel);
+    this._labelEyeBtn.innerHTML = showLabel ? this._eyeOpenSvg() : this._eyeClosedSvg();
+    this._labelEyeBtn.title = showLabel ? 'Hide name on map' : 'Show name on map';
+  }
+
+  _eyeOpenSvg() {
+    return `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M8 3C4.5 3 1.5 6 .5 8c1 2 4 5 7.5 5s6.5-3 7.5-5C14.5 6 11.5 3 8 3zm0 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0-4.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+    </svg>`;
+  }
+
+  _eyeClosedSvg() {
+    return `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M13.36 2.64 2.64 13.36l.7.7 1.4-1.4A7.9 7.9 0 0 0 8 13c3.5 0 6.5-3 7.5-5a8.5 8.5 0 0 0-1.5-2.64l1.07-1.07-.7-.65zM8 11a3 3 0 0 1-2.58-1.48l.83-.83A1.5 1.5 0 0 0 9.49 6.75l.83-.83A3 3 0 0 1 8 11zM.5 8C1.5 6 4.5 3 8 3c.96 0 1.88.2 2.73.53L9.2 5.06A3 3 0 0 0 5.06 9.2L3.35 10.9A8.8 8.8 0 0 1 .5 8z"/>
+    </svg>`;
   }
 }

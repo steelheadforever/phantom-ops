@@ -599,6 +599,16 @@
   vertical-align: middle;
 }
 
+/* Point name label (divIcon placed to the right of symbol) */
+.point-name-label {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none;
+  font-family: 'B612 Mono', monospace;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
 /* Pre-placement placeholder row in coordinate tables */
 .pp-pre-label {
   padding: 6px 8px;

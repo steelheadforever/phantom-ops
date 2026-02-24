@@ -28,6 +28,8 @@ export class ShapeManager {
     this._layers = new Map();
     /** @type {Map<string, L.Marker>} label markers for lines with showLabel=true */
     this._labelMarkers = new Map();
+    /** @type {Map<string, L.Marker>} name labels for points with showLabel=true */
+    this._pointLabelMarkers = new Map();
     this._map = null;
     /** @type {Array<() => void>} */
     this._listeners = [];
@@ -38,6 +40,8 @@ export class ShapeManager {
   /** Call once after map is ready. Restores any persisted shapes. */
   restore(map) {
     this._map = map;
+    // Zoom-gate: hide/show point markers below zoom 8 (matches navaid threshold)
+    map.on('zoomend', () => this._syncPointZoom());
     try {
       const raw = globalThis?.localStorage?.getItem(STORAGE_KEY);
       if (!raw) return;
@@ -85,6 +89,7 @@ export class ShapeManager {
       lat: config.lat,
       lng: config.lng,
       symbol: config.symbol ?? 'waypoint',
+      showLabel: config.showLabel ?? false,
     };
     this.shapes.push(record);
     this._createLayer(record);
@@ -108,12 +113,31 @@ export class ShapeManager {
         const styleChanged = changes.color !== undefined || changes.opacity !== undefined || changes.symbol !== undefined;
         if (posChanged) {
           layer.setLatLng([rec.lat, rec.lng]);
+          this._pointLabelMarkers.get(id)?.setLatLng([rec.lat, rec.lng]);
         }
         if (styleChanged) {
           layer.setIcon(this._makePointIcon(rec));
+          this._updatePointLabelStyle(rec);
+        }
+        if (changes.name !== undefined) {
+          this._updatePointLabelStyle(rec);
+        }
+        if (changes.showLabel !== undefined) {
+          if (rec.showLabel && this._map.getZoom() >= 8) {
+            this._createPointLabel(rec);
+          } else {
+            this._removePointLabel(id);
+          }
         }
         if (changes.visible !== undefined) {
-          rec.visible ? layer.addTo(this._map) : layer.remove();
+          const aboveZoom = this._map.getZoom() >= 8;
+          if (rec.visible && aboveZoom) {
+            layer.addTo(this._map);
+            if (rec.showLabel) this._createPointLabel(rec);
+          } else {
+            layer.remove();
+            this._removePointLabel(id);
+          }
         }
       } else if (rec.type === 'line') {
         if (changes.latlngs !== undefined) {
@@ -189,6 +213,7 @@ export class ShapeManager {
       this._layers.delete(id);
     }
     this._removeLabel(id);
+    this._removePointLabel(id);
     this.shapes = this.shapes.filter((r) => r.id !== id);
     this.persist();
     this._notify();
@@ -255,8 +280,12 @@ export class ShapeManager {
         pane: PANE_IDS.DRAWINGS,
         interactive: true,
       });
-      if (rec.visible !== false) layer.addTo(this._map);
+      const aboveZoom = this._map.getZoom() >= 8;
+      if (rec.visible !== false && aboveZoom) layer.addTo(this._map);
       this._layers.set(rec.id, layer);
+      if (rec.showLabel && aboveZoom && rec.visible !== false) {
+        this._createPointLabel(rec);
+      }
     } else if (rec.type === 'line') {
       layer = L.polyline(
         (rec.latlngs ?? []).map((ll) => [ll.lat, ll.lng]),
@@ -299,6 +328,60 @@ export class ShapeManager {
       this._layers.set(rec.id, layer);
     }
     return layer;
+  }
+
+  /** Sync point marker + label visibility based on current zoom (called on zoomend). */
+  _syncPointZoom() {
+    const show = this._map.getZoom() >= 8;
+    for (const rec of this.shapes) {
+      if (rec.type !== 'point') continue;
+      const layer = this._layers.get(rec.id);
+      if (!layer) continue;
+      if (show && rec.visible !== false) {
+        layer.addTo(this._map);
+        if (rec.showLabel) this._createPointLabel(rec);
+      } else {
+        layer.remove();
+        this._removePointLabel(rec.id);
+      }
+    }
+  }
+
+  /** Create or replace the name label for a point. */
+  _createPointLabel(rec) {
+    this._removePointLabel(rec.id);
+    if (!this._map) return;
+    const marker = L.marker([rec.lat, rec.lng], {
+      icon: L.divIcon({
+        className: 'point-name-label',
+        html: `<div style="color:${rec.color}">${rec.name}</div>`,
+        iconSize: [120, 16],
+        iconAnchor: [-14, 8],  // anchors left of icon, so text appears to the right of symbol
+      }),
+      pane: PANE_IDS.DRAWINGS,
+      interactive: false,
+    }).addTo(this._map);
+    this._pointLabelMarkers.set(rec.id, marker);
+  }
+
+  /** Update text/color of an existing point label without recreating. */
+  _updatePointLabelStyle(rec) {
+    const marker = this._pointLabelMarkers.get(rec.id);
+    if (!marker) return;
+    const el = marker.getElement?.()?.querySelector('div');
+    if (el) {
+      el.textContent = rec.name;
+      el.style.color = rec.color;
+    }
+  }
+
+  /** Remove point label marker if it exists. */
+  _removePointLabel(id) {
+    const marker = this._pointLabelMarkers.get(id);
+    if (marker) {
+      marker.remove();
+      this._pointLabelMarkers.delete(id);
+    }
   }
 
   /** Create or replace the name label marker for a line. */
