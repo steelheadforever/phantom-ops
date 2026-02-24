@@ -33,6 +33,7 @@ export class CircleDrawTool {
   activate() {
     if (this._state !== 'idle') return;
     this._map.getContainer().style.cursor = 'crosshair';
+    this._shapePopup.openPre();
     this._map.once('click', this._onFirstClick);
     this._map.once('contextmenu', this._onRightClick);
   }
@@ -127,26 +128,25 @@ export class CircleDrawTool {
   _onSecondClick(e) {
     const radiusNm = this._map.distance(this._center, e.latlng) / 1852;
 
-    // Remove preview
     this._cleanup();
     this._map.off('mousemove', this._onMouseMove);
 
-    // Place the actual circle via ShapeManager
+    // Use whatever name/color/opacity the user set in the pre-placement popup
+    const config = this._shapePopup.getPendingConfig();
     const shapeId = this._shapeManager.addShape({
       centerLat: this._center.lat,
       centerLng: this._center.lng,
       radiusNm: Math.max(radiusNm, 0.01),
-      color: '#4da6ff',
-      opacity: 0.26,
+      color:   config.color,
+      opacity: config.opacity,
+      name:    config.name || undefined,
     }, this._map);
     this._activeShapeId = shapeId;
     this._state = 'placed';
-
-    // Restore cursor
     this._map.getContainer().style.cursor = '';
 
-    // Open popup so user can name / style the shape
-    this._shapePopup.open(shapeId, { isNew: true });
+    // Transition popup from pre-placement to active editing
+    this._shapePopup.attachShape(shapeId);
   }
 
   _onRightClick(e) {

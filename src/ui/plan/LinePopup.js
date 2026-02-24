@@ -36,7 +36,9 @@ export class LinePopup {
     this._el = null;
     this._currentId = null;
     this._isNew = false;
+    this._isPre = false;
     this._placingEnabled = false;
+    this._selectedColor = '#4da6ff';
     this._pointMarkers = [];     // draggable markers (edit mode only)
 
     // Field refs
@@ -68,11 +70,71 @@ export class LinePopup {
     this._placeBtn = el.querySelector('.lp-place-btn');
 
     this._bindStaticEvents();
+
+    // Re-format coordinate table when format changes
+    this._coordinateService?.onFormatChange(() => {
+      if (!this._currentId || this._isPre) return;
+      this._refreshTable();
+    });
+
     return this;
   }
 
+  /** Show popup in pre-placement mode — before any point is clicked. */
+  openPre() {
+    this._destroyMarkers();
+    this._currentId = null;
+    this._isNew = true;
+    this._isPre = true;
+    this._placingEnabled = true;
+
+    this._titleEl.textContent = 'New Line';
+    this._nameInput.value = '';
+    this._updateLabelEye(false);
+    this._selectColor('#4da6ff');
+    this._dashSelect.value = 'solid';
+    const pct = Math.round((1 - (this._shapeManager.lastOpacity ?? 0.26)) * 100);
+    this._transparencyInput.value = 0;
+    this._transparencyLabel.textContent = '0% transparent';
+    this._coordTbody.innerHTML = '<tr><td colspan="3" class="pp-pre-label">— click map to place points —</td></tr>';
+    this._updatePlaceBtn();
+    this._el.style.display = 'block';
+  }
+
   /**
-   * Open the popup for a line shape.
+   * Called by LineDrawTool after the first point is placed.
+   * Transitions from pre-placement to active editing.
+   */
+  attachShape(shapeId) {
+    const rec = this._shapeManager.shapes.find((s) => s.id === shapeId);
+    if (!rec) return;
+    this._currentId = shapeId;
+    this._isPre = false;
+    // Apply any values already set in pre-placement
+    const name = this._nameInput.value.trim();
+    const pct = parseInt(this._transparencyInput.value, 10);
+    this._shapeManager.updateShape(shapeId, {
+      ...(name ? { name } : {}),
+      color: this._selectedColor,
+      opacity: (100 - pct) / 100,
+      dash: this._dashSelect.value,
+    });
+    this._refreshTable();
+  }
+
+  /** Returns field values for use when creating the shape. */
+  getPendingConfig() {
+    const pct = parseInt(this._transparencyInput?.value ?? '0', 10);
+    return {
+      name:    this._nameInput?.value.trim() || null,
+      color:   this._selectedColor,
+      opacity: (100 - pct) / 100,
+      dash:    this._dashSelect?.value ?? 'solid',
+    };
+  }
+
+  /**
+   * Open popup for an existing shape.
    * @param {string} shapeId
    * @param {{ isNew?: boolean }} opts
    */
@@ -83,7 +145,8 @@ export class LinePopup {
     this._destroyMarkers();
     this._currentId = shapeId;
     this._isNew = isNew;
-    this._placingEnabled = isNew;  // placing starts on for new lines
+    this._isPre = false;
+    this._placingEnabled = false;  // edit mode: placing off by default
 
     this._titleEl.textContent = isNew ? 'New Line' : rec.name;
     this._nameInput.value = rec.name;
@@ -110,6 +173,7 @@ export class LinePopup {
     this._destroyMarkers();
     this._el.style.display = 'none';
     this._currentId = null;
+    this._isPre = false;
   }
 
   /** Called by LineDrawTool after each new point is added during placement. */
@@ -242,13 +306,14 @@ export class LinePopup {
 
     // Done
     this._el.querySelector('.sp-done').addEventListener('click', () => {
-      if (this._currentId) {
-        const name = this._nameInput.value.trim() || `Line ${this._currentId}`;
-        this._shapeManager.updateShape(this._currentId, { name });
+      if (this._isPre || !this._currentId) {
+        this._lineTool?.cancelPlacement();
+        this.close();
+        return;
       }
-      if (this._isNew) {
-        this._lineTool?.resetToIdle();
-      }
+      const name = this._nameInput.value.trim() || `Line ${this._currentId}`;
+      this._shapeManager.updateShape(this._currentId, { name });
+      if (this._isNew) this._lineTool?.resetToIdle();
       this.close();
     });
 
@@ -398,6 +463,7 @@ export class LinePopup {
   }
 
   _selectColor(hex) {
+    this._selectedColor = hex;
     if (!this._el) return;
     this._el.querySelectorAll('.color-swatch').forEach((btn) => {
       btn.classList.toggle('color-swatch--selected', btn.dataset.hex === hex);

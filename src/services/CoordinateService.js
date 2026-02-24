@@ -6,6 +6,12 @@ export class CoordinateService {
     this.mgrsLib = mgrsLib;
     this.currentFormatIndex = 0;
     this.currentLatLng = null;
+    this._formatListeners = [];
+  }
+
+  /** Register a callback invoked whenever the coordinate format changes. */
+  onFormatChange(cb) {
+    this._formatListeners.push(cb);
   }
 
   getCurrentFormat() {
@@ -15,7 +21,9 @@ export class CoordinateService {
   cycleFormat() {
     this.currentFormatIndex = (this.currentFormatIndex + 1) % FORMATS.length;
     this.publishCurrentCoordinate();
-    return this.getCurrentFormat();
+    const fmt = this.getCurrentFormat();
+    for (const cb of this._formatListeners) { try { cb(fmt); } catch { /* ignore */ } }
+    return fmt;
   }
 
   attachToMap(map) {

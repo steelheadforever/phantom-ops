@@ -1,8 +1,10 @@
+import { getSymbolSvg } from '../../services/drawing/pointSymbols.js';
+
 /**
- * DrawShapesPanel — Draw Shapes submenu with Circle/Polygon/Line buttons and a shape table.
+ * DrawShapesPanel — Draw Shapes/Points submenu with tool buttons and a shape table.
  */
 export class DrawShapesPanel {
-  constructor({ sideMenu, shapeManager, coordinateService, circleTool, shapePopup, polygonTool, polygonPopup, lineTool, linePopup }) {
+  constructor({ sideMenu, shapeManager, coordinateService, circleTool, shapePopup, polygonTool, polygonPopup, lineTool, linePopup, pointTool, pointPopup }) {
     this._sideMenu = sideMenu;
     this._shapeManager = shapeManager;
     this._coordinateService = coordinateService;
@@ -12,6 +14,8 @@ export class DrawShapesPanel {
     this._polygonPopup = polygonPopup;
     this._lineTool = lineTool;
     this._linePopup = linePopup;
+    this._pointTool = pointTool;
+    this._pointPopup = pointPopup;
 
     // Single shared dropdown element, appended to body
     this._dropdown = this._buildDropdown();
@@ -64,9 +68,16 @@ export class DrawShapesPanel {
       this._lineTool.activate();
     });
 
+    const pointBtn = this._makeBtn('Point', false);
+    pointBtn.addEventListener('click', () => {
+      this._sideMenu.close();
+      this._pointTool.activate();
+    });
+
     btnGroup.appendChild(circleBtn);
     btnGroup.appendChild(polygonBtn);
     btnGroup.appendChild(lineBtn);
+    btnGroup.appendChild(pointBtn);
     el.appendChild(btnGroup);
 
     // Shape table container
@@ -143,22 +154,31 @@ export class DrawShapesPanel {
     nameTd.className = 'shape-table__name';
     nameTd.textContent = shape.name;
 
-    // Info — location for circles, point count for polygons/lines
+    // Info — location for circles/points, point count for polygons/lines
     const infoTd = document.createElement('td');
     infoTd.className = 'shape-table__loc';
     if (shape.type === 'polygon' || shape.type === 'line') {
       infoTd.textContent = `${shape.latlngs?.length ?? 0} pts`;
+    } else if (shape.type === 'point') {
+      infoTd.textContent = this._formatCoord(shape.lat, shape.lng);
     } else {
       infoTd.textContent = this._formatCoord(shape.centerLat, shape.centerLng);
     }
 
-    // Color swatch
+    // Color swatch — for points show colored symbol icon instead of plain dot
     const colorTd = document.createElement('td');
     colorTd.className = 'shape-table__color';
-    const swatch = document.createElement('span');
-    swatch.className = 'shape-table__swatch';
-    swatch.style.background = shape.color;
-    colorTd.appendChild(swatch);
+    if (shape.type === 'point') {
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'shape-table__point-icon';
+      iconWrap.innerHTML = getSymbolSvg(shape.symbol ?? 'waypoint', shape.color, shape.opacity, 14);
+      colorTd.appendChild(iconWrap);
+    } else {
+      const swatch = document.createElement('span');
+      swatch.className = 'shape-table__swatch';
+      swatch.style.background = shape.color;
+      colorTd.appendChild(swatch);
+    }
 
     // Visibility toggle
     const visTd = document.createElement('td');
@@ -222,6 +242,8 @@ export class DrawShapesPanel {
         this._polygonPopup?.open(shape.id, { isNew: false });
       } else if (shape.type === 'line') {
         this._linePopup?.open(shape.id, { isNew: false });
+      } else if (shape.type === 'point') {
+        this._pointPopup?.open(shape.id, { isNew: false });
       } else {
         this._shapePopup?.open(shape.id, { isNew: false });
       }

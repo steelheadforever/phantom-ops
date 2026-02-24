@@ -24,7 +24,7 @@ export class PlanPanel {
     const btnGroup = document.createElement('div');
     btnGroup.className = 'panel-btn-group';
 
-    const drawShapesBtn = this._makeBtn('Draw Shapes', false);
+    const drawShapesBtn = this._makeBtn('Draw Shapes/Points', false);
     drawShapesBtn.addEventListener('click', () => {
       this._sideMenu.pushView('draw-shapes', this._drawShapesPanel.el);
     });

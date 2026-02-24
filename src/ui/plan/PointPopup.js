@@ -1,9 +1,11 @@
 /**
- * ShapePopup — floating upper-right popup for circle placement and editing.
+ * PointPopup — floating upper-right popup for point placement and editing.
  *
- * Pre-placement (openPre): name/color/transparency active; location/radius disabled.
- * After placement (attachShape): all fields active; draggable center marker on map.
+ * Pre-placement: name, symbol, color, transparency active; location disabled.
+ * After placement: location field populated and editable.
  */
+
+import { POINT_SYMBOLS } from '../../services/drawing/pointSymbols.js';
 
 const TACTICAL_COLORS = [
   { label: 'Red',    hex: '#e63946' },
@@ -15,39 +17,32 @@ const TACTICAL_COLORS = [
   { label: 'Black',  hex: '#1a1a1a' },
 ];
 
-const CENTER_MARKER_ICON = L.divIcon({
-  className: 'center-marker',
-  html: '<div class="center-marker__dot"></div>',
-  iconSize: [14, 14],
-  iconAnchor: [7, 7],
-});
-
-export class ShapePopup {
-  constructor({ shapeManager, coordinateService, coordinateParser, circleTool, map }) {
+export class PointPopup {
+  constructor({ shapeManager, coordinateService, coordinateParser, pointTool, map }) {
     this._shapeManager = shapeManager;
     this._coordinateService = coordinateService;
     this._coordinateParser = coordinateParser;
-    this._circleTool = circleTool;
+    this._pointTool = pointTool;  // may be null — set via late binding
     this._map = map;
 
     this._el = null;
     this._currentId = null;
     this._isNew = false;
-    this._isPre = false;          // true = pre-placement, no shape yet
+    this._isPre = false;        // true = pre-placement (no shape yet)
     this._selectedColor = '#4da6ff';
-    this._centerMarker = null;
 
+    // Field refs
     this._titleEl = null;
     this._nameInput = null;
     this._locationInput = null;
-    this._radiusInput = null;
+    this._symbolSelect = null;
     this._transparencyInput = null;
     this._transparencyLabel = null;
   }
 
   mount(root = document.body) {
     const el = document.createElement('div');
-    el.className = 'shape-popup';
+    el.className = 'shape-popup point-popup';
     el.style.display = 'none';
     el.innerHTML = this._template();
     root.appendChild(el);
@@ -56,35 +51,33 @@ export class ShapePopup {
     this._titleEl = el.querySelector('.shape-popup__title');
     this._nameInput = el.querySelector('.sp-name');
     this._locationInput = el.querySelector('.sp-location');
-    this._radiusInput = el.querySelector('.sp-radius');
+    this._symbolSelect = el.querySelector('.lp-dash-select');
     this._transparencyInput = el.querySelector('.sp-transparency');
     this._transparencyLabel = el.querySelector('.sp-transparency-label');
 
-    this._bindEvents();
+    this._bindStaticEvents();
 
-    // Re-format location field when coordinate format changes
+    // Refresh location field when coordinate format changes
     this._coordinateService?.onFormatChange(() => {
       if (!this._currentId || this._isPre) return;
       const rec = this._shapeManager.shapes.find((s) => s.id === this._currentId);
-      if (rec) this._locationInput.value = this._formatCenter(rec.centerLat, rec.centerLng);
+      if (rec) this._locationInput.value = this._fmt(rec.lat, rec.lng);
     });
 
     return this;
   }
 
-  /** Show popup in pre-placement mode — before the circle is drawn. */
+  /** Show popup in pre-placement mode (no shape placed yet). */
   openPre() {
-    this._destroyCenterMarker();
     this._currentId = null;
     this._isNew = true;
     this._isPre = true;
 
-    this._titleEl.textContent = 'New Circle';
+    this._titleEl.textContent = 'New Point';
     this._nameInput.value = '';
-    this._locationInput.value = '— place center —';
+    this._locationInput.value = '— click map —';
     this._locationInput.disabled = true;
-    this._radiusInput.value = '';
-    this._radiusInput.disabled = true;
+    this._symbolSelect.value = 'waypoint';
     this._selectColor('#4da6ff');
     const pct = Math.round((1 - (this._shapeManager.lastOpacity ?? 0.26)) * 100);
     this._transparencyInput.value = pct;
@@ -93,23 +86,7 @@ export class ShapePopup {
   }
 
   /**
-   * Called by CircleDrawTool after the circle is placed — transitions from
-   * pre-placement to active editing.
-   */
-  attachShape(shapeId) {
-    const rec = this._shapeManager.shapes.find((s) => s.id === shapeId);
-    if (!rec) return;
-    this._currentId = shapeId;
-    this._isPre = false;
-    this._locationInput.value = this._formatCenter(rec.centerLat, rec.centerLng);
-    this._locationInput.disabled = false;
-    this._radiusInput.value = rec.radiusNm.toFixed(2);
-    this._radiusInput.disabled = false;
-    this._createCenterMarker(rec);
-  }
-
-  /**
-   * Open popup for an existing shape (edit mode, not new).
+   * Open popup for an existing shape (edit mode).
    * @param {string} shapeId
    * @param {{ isNew?: boolean }} opts
    */
@@ -117,38 +94,45 @@ export class ShapePopup {
     const rec = this._shapeManager.shapes.find((s) => s.id === shapeId);
     if (!rec) return;
 
-    this._destroyCenterMarker();
     this._currentId = shapeId;
     this._isNew = isNew;
     this._isPre = false;
 
-    this._titleEl.textContent = isNew ? 'New Circle' : rec.name;
+    this._titleEl.textContent = isNew ? 'New Point' : rec.name;
     this._nameInput.value = rec.name;
-    this._locationInput.value = this._formatCenter(rec.centerLat, rec.centerLng);
+    this._locationInput.value = this._fmt(rec.lat, rec.lng);
     this._locationInput.disabled = false;
-    this._radiusInput.value = rec.radiusNm.toFixed(2);
-    this._radiusInput.disabled = false;
+    this._symbolSelect.value = rec.symbol ?? 'waypoint';
+    this._selectColor(rec.color);
 
     const pct = Math.round((1 - rec.opacity) * 100);
     this._transparencyInput.value = pct;
     this._transparencyLabel.textContent = `${pct}% transparent`;
-    this._selectColor(rec.color);
     this._el.style.display = 'block';
-    this._createCenterMarker(rec);
+  }
+
+  /** Called by PointDrawTool after the point is placed. */
+  attachShape(shapeId) {
+    const rec = this._shapeManager.shapes.find((s) => s.id === shapeId);
+    if (!rec) return;
+    this._currentId = shapeId;
+    this._isPre = false;
+    this._locationInput.value = this._fmt(rec.lat, rec.lng);
+    this._locationInput.disabled = false;
   }
 
   close() {
-    this._destroyCenterMarker();
     this._el.style.display = 'none';
     this._currentId = null;
     this._isPre = false;
   }
 
-  /** Returns field values for use when creating the shape. */
+  /** Returns the current popup field values for use before a shape is created. */
   getPendingConfig() {
     const pct = parseInt(this._transparencyInput?.value ?? '74', 10);
     return {
       name:    this._nameInput?.value.trim() || null,
+      symbol:  this._symbolSelect?.value ?? 'waypoint',
       color:   this._selectedColor,
       opacity: (100 - pct) / 100,
     };
@@ -162,31 +146,41 @@ export class ShapePopup {
         style="background:${c.hex};" aria-label="${c.label}"></button>`
     ).join('');
 
+    const symbolHtml = POINT_SYMBOLS.map((s) =>
+      `<option value="${s.value}">${s.label}</option>`
+    ).join('');
+
     return `
-      <div class="shape-popup__title">Circle</div>
+      <div class="shape-popup__title">Point</div>
+
       <div class="shape-popup__field">
         <label>Name</label>
         <input class="sp-name sp-input" type="text" autocomplete="off" />
       </div>
+
       <div class="shape-popup__field">
         <label>Location</label>
         <input class="sp-location sp-input" type="text" autocomplete="off" />
       </div>
+
       <div class="shape-popup__field">
-        <label>Radius (nm)</label>
-        <input class="sp-radius sp-input" type="number" min="0.01" step="0.01" />
+        <label>Symbol</label>
+        <select class="lp-dash-select sp-input">${symbolHtml}</select>
       </div>
+
       <div class="shape-popup__field">
         <label>Color</label>
         <div class="color-swatches">${swatchHtml}</div>
       </div>
+
       <div class="shape-popup__field">
         <label>Transparency</label>
         <div class="sp-transparency-row">
           <input class="sp-transparency" type="range" min="0" max="100" step="1" />
-          <span class="sp-transparency-label">74% transparent</span>
+          <span class="sp-transparency-label">0% transparent</span>
         </div>
       </div>
+
       <div class="shape-popup__actions">
         <button class="sp-done sp-btn sp-btn--primary">Done</button>
         <button class="sp-cancel sp-btn">Cancel</button>
@@ -194,80 +188,73 @@ export class ShapePopup {
     `;
   }
 
-  _bindEvents() {
+  _bindStaticEvents() {
+    // Name
     this._nameInput.addEventListener('change', () => {
       if (!this._currentId) return;
-      this._shapeManager.updateShape(this._currentId, { name: this._nameInput.value.trim() || `Circle ${this._currentId}` });
+      const name = this._nameInput.value.trim() || `Point ${this._currentId}`;
+      this._shapeManager.updateShape(this._currentId, { name });
     });
 
+    // Location — validate on blur
     this._locationInput.addEventListener('blur', () => {
       if (!this._currentId) return;
       const parsed = this._coordinateParser?.parseToLatLng(this._locationInput.value);
       if (parsed) {
-        this._shapeManager.updateShape(this._currentId, { centerLat: parsed.lat, centerLng: parsed.lng });
-        this._locationInput.value = this._formatCenter(parsed.lat, parsed.lng);
-        this._centerMarker?.setLatLng([parsed.lat, parsed.lng]);
+        this._shapeManager.updateShape(this._currentId, { lat: parsed.lat, lng: parsed.lng });
+        this._locationInput.value = this._fmt(parsed.lat, parsed.lng);
       } else {
         const rec = this._shapeManager.shapes.find((s) => s.id === this._currentId);
-        if (rec) this._locationInput.value = this._formatCenter(rec.centerLat, rec.centerLng);
+        if (rec) this._locationInput.value = this._fmt(rec.lat, rec.lng);
       }
     });
 
-    this._radiusInput.addEventListener('input', () => {
+    // Symbol select
+    this._symbolSelect.addEventListener('change', () => {
       if (!this._currentId) return;
-      const val = parseFloat(this._radiusInput.value);
-      if (val > 0) this._shapeManager.updateShape(this._currentId, { radiusNm: val });
+      this._shapeManager.updateShape(this._currentId, { symbol: this._symbolSelect.value });
     });
 
+    // Color swatches
     this._el.querySelectorAll('.color-swatch').forEach((btn) => {
       btn.addEventListener('click', () => {
         this._selectColor(btn.dataset.hex);
-        if (this._currentId) this._shapeManager.updateShape(this._currentId, { color: btn.dataset.hex });
+        if (this._currentId) {
+          this._shapeManager.updateShape(this._currentId, { color: btn.dataset.hex });
+        }
       });
     });
 
+    // Transparency
     this._transparencyInput.addEventListener('input', () => {
       const pct = parseInt(this._transparencyInput.value, 10);
       this._transparencyLabel.textContent = `${pct}% transparent`;
-      if (this._currentId) this._shapeManager.updateShape(this._currentId, { opacity: (100 - pct) / 100 });
+      if (this._currentId) {
+        this._shapeManager.updateShape(this._currentId, { opacity: (100 - pct) / 100 });
+      }
     });
 
+    // Done
     this._el.querySelector('.sp-done').addEventListener('click', () => {
       if (this._isPre || !this._currentId) {
-        this._circleTool?.cancelPlacement();
+        // Nothing placed yet — treat as cancel
+        this._pointTool?.cancelPlacement();
         this.close();
         return;
       }
-      this._shapeManager.updateShape(this._currentId, { name: this._nameInput.value.trim() || `Circle ${this._currentId}` });
-      if (this._isNew) this._circleTool?.resetToIdle();
+      const name = this._nameInput.value.trim() || `Point ${this._currentId}`;
+      this._shapeManager.updateShape(this._currentId, { name });
+      if (this._isNew) this._pointTool?.resetToIdle();
       this.close();
     });
 
+    // Cancel
     this._el.querySelector('.sp-cancel').addEventListener('click', () => {
-      if (this._isNew) this._circleTool?.cancelPlacement();
+      if (this._isNew) {
+        this._pointTool?.cancelPlacement();
+      }
       this.close();
     });
-  }
-
-  _createCenterMarker(rec) {
-    if (!this._map) return;
-    this._centerMarker = L.marker([rec.centerLat, rec.centerLng], {
-      icon: CENTER_MARKER_ICON,
-      draggable: true,
-      zIndexOffset: 1000,
-    }).addTo(this._map);
-
-    this._centerMarker.on('drag', (e) => {
-      if (!this._currentId) return;
-      const { lat, lng } = e.latlng;
-      this._shapeManager.updateShape(this._currentId, { centerLat: lat, centerLng: lng });
-      this._locationInput.value = this._formatCenter(lat, lng);
-    });
-  }
-
-  _destroyCenterMarker() {
-    this._centerMarker?.remove();
-    this._centerMarker = null;
   }
 
   _selectColor(hex) {
@@ -278,7 +265,7 @@ export class ShapePopup {
     });
   }
 
-  _formatCenter(lat, lng) {
+  _fmt(lat, lng) {
     if (!this._coordinateService) return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     const fmt = this._coordinateService.getCurrentFormat();
     return `${fmt}: ${this._coordinateService.formatCoordinate(lat, lng, fmt)}`;

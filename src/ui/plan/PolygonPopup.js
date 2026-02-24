@@ -1,7 +1,9 @@
 /**
  * PolygonPopup — floating upper-right popup for polygon placement and editing.
- * Shows name, color, transparency, and an editable corner coordinate table.
- * Draggable corner markers appear on the map while the popup is open.
+ *
+ * Pre-placement (openPre): name/color/transparency active; corner table empty.
+ * During placement (attachShape): corner table updates as points are added.
+ * After close (notifyPolygonClosed): draggable corner markers appear.
  */
 
 const TACTICAL_COLORS = [
@@ -25,6 +27,8 @@ export class PolygonPopup {
     this._el = null;
     this._currentId = null;
     this._isNew = false;
+    this._isPre = false;
+    this._selectedColor = '#4da6ff';
     this._cornerMarkers = [];
 
     this._titleEl = null;
@@ -49,7 +53,61 @@ export class PolygonPopup {
     this._coordTbody = el.querySelector('.pp-coord-tbody');
 
     this._bindStaticEvents();
+
+    // Re-format all coordinate rows when the format changes
+    this._coordinateService?.onFormatChange(() => {
+      if (!this._currentId || this._isPre) return;
+      this._refreshTable();
+    });
+
     return this;
+  }
+
+  /** Show popup in pre-placement mode — before any point is clicked. */
+  openPre() {
+    this._destroyMarkers();
+    this._currentId = null;
+    this._isNew = true;
+    this._isPre = true;
+
+    this._titleEl.textContent = 'New Polygon';
+    this._nameInput.value = '';
+    this._coordTbody.innerHTML = '<tr><td colspan="3" class="pp-pre-label">— click map to place corners —</td></tr>';
+    this._selectColor('#4da6ff');
+    const pct = Math.round((1 - (this._shapeManager.lastOpacity ?? 0.26)) * 100);
+    this._transparencyInput.value = pct;
+    this._transparencyLabel.textContent = `${pct}% transparent`;
+    this._el.style.display = 'block';
+  }
+
+  /**
+   * Called by PolygonDrawTool after the first point is placed.
+   * Transitions from pre-placement to active editing.
+   */
+  attachShape(shapeId) {
+    const rec = this._shapeManager.shapes.find((s) => s.id === shapeId);
+    if (!rec) return;
+    this._currentId = shapeId;
+    this._isPre = false;
+    // Apply any name/color already set in pre-placement
+    const name = this._nameInput.value.trim();
+    if (name) this._shapeManager.updateShape(shapeId, { name, color: this._selectedColor, opacity: (100 - parseInt(this._transparencyInput.value, 10)) / 100 });
+    this._refreshTable();
+  }
+
+  /**
+   * Called by PolygonDrawTool when the polygon is snapped closed.
+   * Adds draggable corner markers now that placement is done.
+   */
+  notifyPolygonClosed() {
+    this._refreshTable();
+    this._refreshMarkers();
+  }
+
+  /** Public — called by PolygonDrawTool after each point is added during placement. */
+  refreshCornerTable() {
+    if (!this._currentId) return;
+    this._refreshTable();
   }
 
   open(shapeId, { isNew = false } = {}) {
@@ -59,6 +117,7 @@ export class PolygonPopup {
     this._destroyMarkers();
     this._currentId = shapeId;
     this._isNew = isNew;
+    this._isPre = false;
 
     this._titleEl.textContent = isNew ? 'New Polygon' : rec.name;
     this._nameInput.value = rec.name;
@@ -77,6 +136,17 @@ export class PolygonPopup {
     this._destroyMarkers();
     this._el.style.display = 'none';
     this._currentId = null;
+    this._isPre = false;
+  }
+
+  /** Returns field values for use when creating the shape. */
+  getPendingConfig() {
+    const pct = parseInt(this._transparencyInput?.value ?? '74', 10);
+    return {
+      name:    this._nameInput?.value.trim() || null,
+      color:   this._selectedColor,
+      opacity: (100 - pct) / 100,
+    };
   }
 
   // ─── private ────────────────────────────────────────────────────────────
@@ -130,33 +200,31 @@ export class PolygonPopup {
     this._el.querySelectorAll('.color-swatch').forEach((btn) => {
       btn.addEventListener('click', () => {
         this._selectColor(btn.dataset.hex);
-        if (this._currentId) {
-          this._shapeManager.updateShape(this._currentId, { color: btn.dataset.hex });
-        }
+        if (this._currentId) this._shapeManager.updateShape(this._currentId, { color: btn.dataset.hex });
       });
     });
 
     this._transparencyInput.addEventListener('input', () => {
-      if (!this._currentId) return;
       const pct = parseInt(this._transparencyInput.value, 10);
       this._transparencyLabel.textContent = `${pct}% transparent`;
-      this._shapeManager.updateShape(this._currentId, { opacity: (100 - pct) / 100 });
+      if (this._currentId) this._shapeManager.updateShape(this._currentId, { opacity: (100 - pct) / 100 });
     });
 
     this._el.querySelector('.sp-done').addEventListener('click', () => {
-      if (this._currentId) {
-        this._shapeManager.updateShape(this._currentId, {
-          name: this._nameInput.value.trim() || `Polygon ${this._currentId}`,
-        });
+      if (this._isPre || !this._currentId) {
+        this._polygonTool?.cancelPlacement();
+        this.close();
+        return;
       }
+      this._shapeManager.updateShape(this._currentId, {
+        name: this._nameInput.value.trim() || `Polygon ${this._currentId}`,
+      });
       if (this._isNew) this._polygonTool?.resetToIdle();
       this.close();
     });
 
     this._el.querySelector('.sp-cancel').addEventListener('click', () => {
-      if (this._isNew) {
-        this._polygonTool?.cancelPlacement();
-      }
+      if (this._isNew) this._polygonTool?.cancelPlacement();
       this.close();
     });
   }
@@ -172,12 +240,10 @@ export class PolygonPopup {
       const tr = document.createElement('tr');
       tr.className = 'pp-coord-row';
 
-      // Corner number
       const numTd = document.createElement('td');
       numTd.className = 'pp-coord-num';
       numTd.textContent = i + 1;
 
-      // Coordinate input
       const inputTd = document.createElement('td');
       inputTd.className = 'pp-coord-input-cell';
       const input = document.createElement('input');
@@ -202,7 +268,6 @@ export class PolygonPopup {
       });
       inputTd.appendChild(input);
 
-      // Minus button
       const minusTd = document.createElement('td');
       minusTd.className = 'pp-coord-minus-cell';
       const minusBtn = document.createElement('button');
@@ -215,7 +280,6 @@ export class PolygonPopup {
         if (!cur) return;
         const newLatlngs = cur.latlngs.filter((_, idx) => idx !== i);
         if (newLatlngs.length < 3) {
-          // Drop below triangle minimum — remove shape
           if (this._isNew) {
             this._polygonTool?.cancelPlacement();
           } else {
@@ -261,7 +325,6 @@ export class PolygonPopup {
         const newLatlngs = [...cur.latlngs];
         newLatlngs[i] = { lat, lng };
         this._shapeManager.updateShape(this._currentId, { latlngs: newLatlngs });
-        // Update this row's input live while dragging
         const inputs = this._coordTbody?.querySelectorAll('.pp-coord-input');
         if (inputs?.[i]) inputs[i].value = this._fmt(lat, lng);
       });
@@ -276,6 +339,7 @@ export class PolygonPopup {
   }
 
   _selectColor(hex) {
+    this._selectedColor = hex;
     if (!this._el) return;
     this._el.querySelectorAll('.color-swatch').forEach((btn) => {
       btn.classList.toggle('color-swatch--selected', btn.dataset.hex === hex);

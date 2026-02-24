@@ -35,6 +35,7 @@ export class LineDrawTool {
   activate() {
     if (this._state !== 'idle') return;
     this._map.getContainer().style.cursor = 'crosshair';
+    this._linePopup.openPre();
     this._map.once('click', this._onFirstClick);
     this._map.once('contextmenu', this._onRightClick);
   }
@@ -116,13 +117,15 @@ export class LineDrawTool {
 
     this._addPointMarker(e.latlng);
 
-    // Create the shape in ShapeManager immediately (1 point to start)
+    // Use whatever name/color/dash the user set in the pre-placement popup
+    const config = this._linePopup.getPendingConfig();
     const shapeId = this._shapeManager.addShape({
       type: 'line',
       latlngs: [{ lat: e.latlng.lat, lng: e.latlng.lng }],
-      color: '#4da6ff',
-      opacity: 1.0,
-      dash: 'solid',
+      color:   config.color,
+      opacity: config.opacity,
+      dash:    config.dash ?? 'solid',
+      name:    config.name || undefined,
       showLabel: false,
     }, this._map);
     this._activeShapeId = shapeId;
@@ -152,8 +155,8 @@ export class LineDrawTool {
     this._map.on('click', this._onNextClick);
     this._map.once('contextmenu', this._onRightClick);
 
-    // Open popup so user can name/style while placing continues
-    this._linePopup.open(shapeId, { isNew: true });
+    // Transition popup from pre-placement to live editing
+    this._linePopup.attachShape(shapeId);
   }
 
   _onNextClick(e) {

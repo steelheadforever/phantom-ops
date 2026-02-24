@@ -1,4 +1,5 @@
 import { PANE_IDS } from '../../map/layerZIndex.js';
+import { getSymbolSvg } from './pointSymbols.js';
 
 const STORAGE_KEY = 'phantom-shapes';
 
@@ -17,6 +18,7 @@ const DASH_ARRAYS = {
  * Circle record:  { id, type:'circle',  name, centerLat, centerLng, radiusNm, color, opacity, visible }
  * Polygon record: { id, type:'polygon', name, latlngs:[{lat,lng},...], color, opacity, visible }
  * Line record:    { id, type:'line',    name, latlngs:[{lat,lng},...], color, opacity, dash, showLabel, visible }
+ * Point record:   { id, type:'point',   name, lat, lng, symbol, color, opacity, visible }
  */
 export class ShapeManager {
   constructor() {
@@ -62,7 +64,7 @@ export class ShapeManager {
     const type = config.type ?? 'circle';
     // Lines default to fully opaque; circles/polygons inherit lastOpacity
     const opacity = config.opacity ?? (type === 'line' ? 1.0 : this.lastOpacity);
-    const defaultName = type === 'polygon' ? 'Polygon' : type === 'line' ? 'Line' : 'Circle';
+    const defaultName = type === 'polygon' ? 'Polygon' : type === 'line' ? 'Line' : type === 'point' ? 'Point' : 'Circle';
     const record = {
       id,
       type,
@@ -79,11 +81,15 @@ export class ShapeManager {
       // line-specific
       dash: config.dash ?? 'solid',
       showLabel: config.showLabel ?? false,
+      // point-specific
+      lat: config.lat,
+      lng: config.lng,
+      symbol: config.symbol ?? 'waypoint',
     };
     this.shapes.push(record);
     this._createLayer(record);
-    // Don't let line opacity (1.0) overwrite lastOpacity used by circle/polygon
-    if (type !== 'line') this.lastOpacity = opacity;
+    // Don't let line/point opacity overwrite lastOpacity used by circle/polygon
+    if (type !== 'line' && type !== 'point') this.lastOpacity = opacity;
     this.persist();
     this._notify();
     return id;
@@ -97,7 +103,19 @@ export class ShapeManager {
     const layer = this._layers.get(id);
 
     if (layer) {
-      if (rec.type === 'line') {
+      if (rec.type === 'point') {
+        const posChanged = changes.lat !== undefined || changes.lng !== undefined;
+        const styleChanged = changes.color !== undefined || changes.opacity !== undefined || changes.symbol !== undefined;
+        if (posChanged) {
+          layer.setLatLng([rec.lat, rec.lng]);
+        }
+        if (styleChanged) {
+          layer.setIcon(this._makePointIcon(rec));
+        }
+        if (changes.visible !== undefined) {
+          rec.visible ? layer.addTo(this._map) : layer.remove();
+        }
+      } else if (rec.type === 'line') {
         if (changes.latlngs !== undefined) {
           layer.setLatLngs((rec.latlngs ?? []).map((ll) => [ll.lat, ll.lng]));
           this._repositionLabel(rec);
@@ -158,7 +176,7 @@ export class ShapeManager {
       }
     }
 
-    if (changes.opacity !== undefined && rec.type !== 'line') this.lastOpacity = rec.opacity;
+    if (changes.opacity !== undefined && rec.type !== 'line' && rec.type !== 'point') this.lastOpacity = rec.opacity;
     this.persist();
     this._notify();
   }
@@ -218,10 +236,28 @@ export class ShapeManager {
     return this.shapes.find((r) => r.id === id) ?? null;
   }
 
+  _makePointIcon(rec) {
+    const svg = getSymbolSvg(rec.symbol ?? 'waypoint', rec.color, rec.opacity, 20);
+    return L.divIcon({
+      className: 'point-symbol-icon',
+      html: svg,
+      iconSize: [20, 20],
+      iconAnchor: [10, 10],
+    });
+  }
+
   _createLayer(rec) {
     if (!this._map) return;
     let layer;
-    if (rec.type === 'line') {
+    if (rec.type === 'point') {
+      layer = L.marker([rec.lat, rec.lng], {
+        icon: this._makePointIcon(rec),
+        pane: PANE_IDS.DRAWINGS,
+        interactive: true,
+      });
+      if (rec.visible !== false) layer.addTo(this._map);
+      this._layers.set(rec.id, layer);
+    } else if (rec.type === 'line') {
       layer = L.polyline(
         (rec.latlngs ?? []).map((ll) => [ll.lat, ll.lng]),
         {

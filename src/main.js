@@ -12,9 +12,11 @@ import { ShapeManager } from './services/drawing/ShapeManager.js';
 import { CircleDrawTool } from './services/drawing/CircleDrawTool.js';
 import { PolygonDrawTool } from './services/drawing/PolygonDrawTool.js';
 import { LineDrawTool } from './services/drawing/LineDrawTool.js';
+import { PointDrawTool } from './services/drawing/PointDrawTool.js';
 import { ShapePopup } from './ui/plan/ShapePopup.js';
 import { PolygonPopup } from './ui/plan/PolygonPopup.js';
 import { LinePopup } from './ui/plan/LinePopup.js';
+import { PointPopup } from './ui/plan/PointPopup.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
 
@@ -51,11 +53,18 @@ linePopup.mount(document.body);
 const lineTool = new LineDrawTool({ map, shapeManager, linePopup });
 linePopup._lineTool = lineTool;
 
+const pointPopup = new PointPopup({ shapeManager, coordinateService, coordinateParser, pointTool: null, map });
+pointPopup.mount(document.body);
+
+const pointTool = new PointDrawTool({ map, shapeManager, pointPopup });
+pointPopup._pointTool = pointTool;
+
 const drawShapesPanel = new DrawShapesPanel({
   sideMenu: null, shapeManager, coordinateService,
   circleTool, shapePopup,
   polygonTool, polygonPopup,
   lineTool, linePopup,
+  pointTool, pointPopup,
 });
 const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel });
 
