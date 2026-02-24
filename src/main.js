@@ -11,8 +11,10 @@ import { BrightnessSlider } from './ui/BrightnessSlider.js';
 import { ShapeManager } from './services/drawing/ShapeManager.js';
 import { CircleDrawTool } from './services/drawing/CircleDrawTool.js';
 import { PolygonDrawTool } from './services/drawing/PolygonDrawTool.js';
+import { LineDrawTool } from './services/drawing/LineDrawTool.js';
 import { ShapePopup } from './ui/plan/ShapePopup.js';
 import { PolygonPopup } from './ui/plan/PolygonPopup.js';
+import { LinePopup } from './ui/plan/LinePopup.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
 
@@ -43,10 +45,17 @@ shapePopup._circleTool = circleTool;
 const polygonTool = new PolygonDrawTool({ map, shapeManager, polygonPopup });
 polygonPopup._polygonTool = polygonTool;
 
+const linePopup = new LinePopup({ shapeManager, coordinateService, coordinateParser, lineTool: null, map });
+linePopup.mount(document.body);
+
+const lineTool = new LineDrawTool({ map, shapeManager, linePopup });
+linePopup._lineTool = lineTool;
+
 const drawShapesPanel = new DrawShapesPanel({
   sideMenu: null, shapeManager, coordinateService,
   circleTool, shapePopup,
   polygonTool, polygonPopup,
+  lineTool, linePopup,
 });
 const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel });
 

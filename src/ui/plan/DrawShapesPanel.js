@@ -2,7 +2,7 @@
  * DrawShapesPanel — Draw Shapes submenu with Circle/Polygon/Line buttons and a shape table.
  */
 export class DrawShapesPanel {
-  constructor({ sideMenu, shapeManager, coordinateService, circleTool, shapePopup, polygonTool, polygonPopup }) {
+  constructor({ sideMenu, shapeManager, coordinateService, circleTool, shapePopup, polygonTool, polygonPopup, lineTool, linePopup }) {
     this._sideMenu = sideMenu;
     this._shapeManager = shapeManager;
     this._coordinateService = coordinateService;
@@ -10,6 +10,8 @@ export class DrawShapesPanel {
     this._shapePopup = shapePopup;
     this._polygonTool = polygonTool;
     this._polygonPopup = polygonPopup;
+    this._lineTool = lineTool;
+    this._linePopup = linePopup;
 
     // Single shared dropdown element, appended to body
     this._dropdown = this._buildDropdown();
@@ -56,9 +58,15 @@ export class DrawShapesPanel {
       this._polygonTool.activate();
     });
 
+    const lineBtn = this._makeBtn('Line', false);
+    lineBtn.addEventListener('click', () => {
+      this._sideMenu.close();
+      this._lineTool.activate();
+    });
+
     btnGroup.appendChild(circleBtn);
     btnGroup.appendChild(polygonBtn);
-    btnGroup.appendChild(this._makeBtn('Line', true));
+    btnGroup.appendChild(lineBtn);
     el.appendChild(btnGroup);
 
     // Shape table container
@@ -135,10 +143,10 @@ export class DrawShapesPanel {
     nameTd.className = 'shape-table__name';
     nameTd.textContent = shape.name;
 
-    // Info — location for circles, corner count for polygons
+    // Info — location for circles, point count for polygons/lines
     const infoTd = document.createElement('td');
     infoTd.className = 'shape-table__loc';
-    if (shape.type === 'polygon') {
+    if (shape.type === 'polygon' || shape.type === 'line') {
       infoTd.textContent = `${shape.latlngs?.length ?? 0} pts`;
     } else {
       infoTd.textContent = this._formatCoord(shape.centerLat, shape.centerLng);
@@ -212,6 +220,8 @@ export class DrawShapesPanel {
       this._hideDropdown();
       if (shape.type === 'polygon') {
         this._polygonPopup?.open(shape.id, { isNew: false });
+      } else if (shape.type === 'line') {
+        this._linePopup?.open(shape.id, { isNew: false });
       } else {
         this._shapePopup?.open(shape.id, { isNew: false });
       }

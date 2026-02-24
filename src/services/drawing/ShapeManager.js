@@ -4,11 +4,19 @@ const STORAGE_KEY = 'phantom-shapes';
 
 let _nextId = 1;
 
+const DASH_ARRAYS = {
+  solid:    null,
+  dashed:   '8,6',
+  dotted:   '2,6',
+  'dash-dot': '10,5,2,5',
+};
+
 /**
  * ShapeManager — CRUD + localStorage persistence for drawn shapes.
  *
  * Circle record:  { id, type:'circle',  name, centerLat, centerLng, radiusNm, color, opacity, visible }
  * Polygon record: { id, type:'polygon', name, latlngs:[{lat,lng},...], color, opacity, visible }
+ * Line record:    { id, type:'line',    name, latlngs:[{lat,lng},...], color, opacity, dash, showLabel, visible }
  */
 export class ShapeManager {
   constructor() {
@@ -16,10 +24,12 @@ export class ShapeManager {
     this.shapes = [];
     /** @type {Map<string, L.Layer>} */
     this._layers = new Map();
+    /** @type {Map<string, L.Marker>} label markers for lines with showLabel=true */
+    this._labelMarkers = new Map();
     this._map = null;
     /** @type {Array<() => void>} */
     this._listeners = [];
-    /** Last opacity used — new shapes default to this. */
+    /** Last opacity used — new circles/polygons default to this. */
     this.lastOpacity = 0.26;
   }
 
@@ -50,11 +60,13 @@ export class ShapeManager {
     if (map && !this._map) this._map = map;
     const id = String(_nextId++);
     const type = config.type ?? 'circle';
-    const opacity = config.opacity ?? this.lastOpacity;
+    // Lines default to fully opaque; circles/polygons inherit lastOpacity
+    const opacity = config.opacity ?? (type === 'line' ? 1.0 : this.lastOpacity);
+    const defaultName = type === 'polygon' ? 'Polygon' : type === 'line' ? 'Line' : 'Circle';
     const record = {
       id,
       type,
-      name: config.name ?? `${type === 'polygon' ? 'Polygon' : 'Circle'} ${id}`,
+      name: config.name ?? `${defaultName} ${id}`,
       color: config.color ?? '#4da6ff',
       opacity,
       visible: true,
@@ -62,12 +74,16 @@ export class ShapeManager {
       centerLat: config.centerLat,
       centerLng: config.centerLng,
       radiusNm: config.radiusNm ?? 1,
-      // polygon
+      // polygon + line
       latlngs: config.latlngs ?? null,
+      // line-specific
+      dash: config.dash ?? 'solid',
+      showLabel: config.showLabel ?? false,
     };
     this.shapes.push(record);
     this._createLayer(record);
-    this.lastOpacity = opacity;
+    // Don't let line opacity (1.0) overwrite lastOpacity used by circle/polygon
+    if (type !== 'line') this.lastOpacity = opacity;
     this.persist();
     this._notify();
     return id;
@@ -79,35 +95,70 @@ export class ShapeManager {
     if (!rec) return;
     Object.assign(rec, changes);
     const layer = this._layers.get(id);
+
     if (layer) {
-      if (rec.type === 'polygon') {
+      if (rec.type === 'line') {
+        if (changes.latlngs !== undefined) {
+          layer.setLatLngs((rec.latlngs ?? []).map((ll) => [ll.lat, ll.lng]));
+          this._repositionLabel(rec);
+        }
+        if (changes.color !== undefined) {
+          layer.setStyle({ color: rec.color });
+          this._updateLabelText(rec);
+        }
+        if (changes.opacity !== undefined) {
+          layer.setStyle({ opacity: rec.opacity });
+        }
+        if (changes.dash !== undefined) {
+          layer.setStyle({ dashArray: DASH_ARRAYS[rec.dash] ?? null });
+        }
+        if (changes.name !== undefined) {
+          this._updateLabelText(rec);
+        }
+        if (changes.showLabel !== undefined) {
+          if (rec.showLabel) {
+            this._createLabel(rec);
+          } else {
+            this._removeLabel(id);
+          }
+        }
+        if (changes.visible !== undefined) {
+          if (rec.visible) {
+            layer.addTo(this._map);
+            if (rec.showLabel) this._createLabel(rec);
+          } else {
+            layer.remove();
+            this._removeLabel(id);
+          }
+        }
+      } else if (rec.type === 'polygon') {
         if (changes.latlngs !== undefined) {
           layer.setLatLngs(rec.latlngs.map((ll) => [ll.lat, ll.lng]));
         }
+        if (changes.color !== undefined || changes.opacity !== undefined) {
+          layer.setStyle({ color: rec.color, fillColor: rec.color, fillOpacity: rec.opacity });
+        }
+        if (changes.visible !== undefined) {
+          rec.visible ? layer.addTo(this._map) : layer.remove();
+        }
       } else {
+        // circle
         if (changes.radiusNm !== undefined) {
           layer.setRadius(rec.radiusNm * 1852);
         }
         if (changes.centerLat !== undefined || changes.centerLng !== undefined) {
           layer.setLatLng([rec.centerLat, rec.centerLng]);
         }
-      }
-      if (changes.color !== undefined || changes.opacity !== undefined) {
-        layer.setStyle({
-          color: rec.color,
-          fillColor: rec.color,
-          fillOpacity: rec.opacity,
-        });
-      }
-      if (changes.visible !== undefined) {
-        if (rec.visible) {
-          layer.addTo(this._map);
-        } else {
-          layer.remove();
+        if (changes.color !== undefined || changes.opacity !== undefined) {
+          layer.setStyle({ color: rec.color, fillColor: rec.color, fillOpacity: rec.opacity });
+        }
+        if (changes.visible !== undefined) {
+          rec.visible ? layer.addTo(this._map) : layer.remove();
         }
       }
     }
-    if (changes.opacity !== undefined) this.lastOpacity = rec.opacity;
+
+    if (changes.opacity !== undefined && rec.type !== 'line') this.lastOpacity = rec.opacity;
     this.persist();
     this._notify();
   }
@@ -119,6 +170,7 @@ export class ShapeManager {
       layer.remove();
       this._layers.delete(id);
     }
+    this._removeLabel(id);
     this.shapes = this.shapes.filter((r) => r.id !== id);
     this.persist();
     this._notify();
@@ -169,7 +221,23 @@ export class ShapeManager {
   _createLayer(rec) {
     if (!this._map) return;
     let layer;
-    if (rec.type === 'polygon') {
+    if (rec.type === 'line') {
+      layer = L.polyline(
+        (rec.latlngs ?? []).map((ll) => [ll.lat, ll.lng]),
+        {
+          color: rec.color,
+          opacity: rec.opacity,
+          weight: 2,
+          dashArray: DASH_ARRAYS[rec.dash] ?? null,
+          pane: PANE_IDS.DRAWINGS,
+        },
+      );
+      if (rec.visible !== false) layer.addTo(this._map);
+      this._layers.set(rec.id, layer);
+      if (rec.showLabel && (rec.latlngs?.length ?? 0) >= 2) {
+        this._createLabel(rec);
+      }
+    } else if (rec.type === 'polygon') {
       layer = L.polygon(
         (rec.latlngs ?? []).map((ll) => [ll.lat, ll.lng]),
         {
@@ -180,6 +248,8 @@ export class ShapeManager {
           pane: PANE_IDS.DRAWINGS,
         },
       );
+      if (rec.visible !== false) layer.addTo(this._map);
+      this._layers.set(rec.id, layer);
     } else {
       layer = L.circle([rec.centerLat, rec.centerLng], {
         radius: rec.radiusNm * 1852,
@@ -189,10 +259,56 @@ export class ShapeManager {
         weight: 1.5,
         pane: PANE_IDS.DRAWINGS,
       });
+      if (rec.visible !== false) layer.addTo(this._map);
+      this._layers.set(rec.id, layer);
     }
-    if (rec.visible !== false) layer.addTo(this._map);
-    this._layers.set(rec.id, layer);
     return layer;
+  }
+
+  /** Create or replace the name label marker for a line. */
+  _createLabel(rec) {
+    this._removeLabel(rec.id);
+    if (!this._map || !rec.latlngs || rec.latlngs.length < 2) return;
+    const mid = rec.latlngs[Math.floor((rec.latlngs.length - 1) / 2)];
+    const marker = L.marker([mid.lat, mid.lng], {
+      icon: L.divIcon({
+        className: 'line-label',
+        html: `<div style="color:${rec.color}">${rec.name}</div>`,
+        iconSize: [120, 20],
+        iconAnchor: [60, 20],
+      }),
+      pane: PANE_IDS.DRAWINGS,
+      interactive: false,
+    }).addTo(this._map);
+    this._labelMarkers.set(rec.id, marker);
+  }
+
+  /** Reposition label to line midpoint after latlngs change. */
+  _repositionLabel(rec) {
+    const marker = this._labelMarkers.get(rec.id);
+    if (!marker || !rec.latlngs || rec.latlngs.length < 2) return;
+    const mid = rec.latlngs[Math.floor((rec.latlngs.length - 1) / 2)];
+    marker.setLatLng([mid.lat, mid.lng]);
+  }
+
+  /** Update the label text and color after a name or color change. */
+  _updateLabelText(rec) {
+    const marker = this._labelMarkers.get(rec.id);
+    if (!marker) return;
+    const el = marker.getElement?.()?.querySelector('div');
+    if (el) {
+      el.textContent = rec.name;
+      el.style.color = rec.color;
+    }
+  }
+
+  /** Remove label marker if it exists. */
+  _removeLabel(id) {
+    const marker = this._labelMarkers.get(id);
+    if (marker) {
+      marker.remove();
+      this._labelMarkers.delete(id);
+    }
   }
 
   _notify() {

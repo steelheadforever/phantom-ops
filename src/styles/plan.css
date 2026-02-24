@@ -492,3 +492,108 @@
   color: #e63946;
   background: rgba(230, 57, 70, 0.1);
 }
+
+/* ─── Line popup ─────────────────────────────────────────────── */
+
+.line-popup {
+  width: 280px;
+}
+
+/* Name row: input + eyeball side by side */
+.lp-name-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.lp-name-row .sp-name {
+  flex: 1;
+}
+
+.lp-label-eye {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.lp-label-eye:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.lp-label-eye--active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(245, 168, 0, 0.1);
+}
+
+/* Dash select */
+.lp-dash-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.4)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px !important;
+}
+
+/* Points field */
+.lp-points-field {
+  gap: 6px;
+}
+
+/* Place toggle button */
+.lp-place-btn {
+  display: block;
+  width: 100%;
+  padding: 7px 0;
+  margin-bottom: 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.45);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.lp-place-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.lp-place-btn--on {
+  background: rgba(45, 198, 83, 0.12);
+  border-color: rgba(45, 198, 83, 0.5);
+  color: #2dc653;
+}
+
+.lp-place-btn--on:hover {
+  background: rgba(45, 198, 83, 0.2);
+  color: #2dc653;
+}
+
+/* Line name label (divIcon on map) */
+.line-label {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.line-label div {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.8);
+}
