@@ -1,4 +1,4 @@
-import { MapCore, AIRSPACE_LAYER_DEFS, CGRS_LAYER_DEF, NAVAID_LAYER_DEF, FIX_HIGH_LAYER_DEF, FIX_LOW_LAYER_DEF } from './map/MapCore.js';
+import { MapCore } from './map/MapCore.js';
 import { OverlayService } from './ui/OverlayService.js';
 import { CoordinateService } from './services/CoordinateService.js';
 import { CoordinateParser } from './services/CoordinateParser.js';
@@ -87,7 +87,38 @@ new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 
 // ── Bottom chrome ──────────────────────────────────────────────
 new BaseLayerMenu({ mapCore, bottomBar }).mount();
-new AirspaceMenu({ layerManager: mapCore.layerManager, airspaceLayerDefs: [CGRS_LAYER_DEF, NAVAID_LAYER_DEF, FIX_HIGH_LAYER_DEF, FIX_LOW_LAYER_DEF, ...AIRSPACE_LAYER_DEFS], bottomBar }).mount();
+const AIRSPACE_CATEGORIES = [
+  {
+    label: 'Terminal Area',
+    layers: [
+      { id: 'airspace-class-b', label: 'Class B' },
+      { id: 'airspace-class-c', label: 'Class C' },
+      { id: 'airspace-class-d', label: 'Class D' },
+    ],
+  },
+  {
+    label: 'Working Area',
+    layers: [
+      { id: 'airspace-moa',        label: 'MOAs' },
+      { id: 'airspace-alert',      label: 'Alert Areas' },
+      { id: 'airspace-restricted', label: 'Restricted Areas' },
+      { id: 'cgrs-grid',           label: 'Kill Box' },
+    ],
+  },
+  {
+    label: 'Navigation',
+    layers: [
+      { id: 'navaids',        label: 'Navaids' },
+      { id: 'ifr-fixes-high', label: 'IFR High' },
+      { id: 'ifr-fixes-low',  label: 'IFR Low' },
+    ],
+  },
+  {
+    label: 'Simulated',
+    layers: [],
+  },
+];
+new AirspaceMenu({ layerManager: mapCore.layerManager, categories: AIRSPACE_CATEGORIES, bottomBar }).mount();
 new BrightnessSlider({ layerManager: mapCore.layerManager, bottomBar }).mount();
 
 // ── Map overlays ───────────────────────────────────────────────

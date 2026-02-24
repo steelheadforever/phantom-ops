@@ -126,6 +126,57 @@
   margin: 4px 0;
 }
 
+/* ─── Airspace Menu Accordion ─────────────────────────────── */
+
+.am-category-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 14px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.12s;
+  user-select: none;
+}
+
+.am-category-header:hover {
+  color: var(--gold);
+}
+
+.am-category-header--open {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.am-chevron {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+  transform: rotate(-90deg);
+}
+
+.am-category-header--open .am-chevron {
+  transform: rotate(0deg);
+}
+
+.am-category-body {
+  display: none;
+}
+
+.am-category-body--open {
+  display: block;
+}
+
+.am-category-body .popup-menu__item {
+  padding-left: 28px;
+}
+
 /* ─── Brightness Popup ────────────────────────────────────── */
 
 .popup-menu--brightness {
