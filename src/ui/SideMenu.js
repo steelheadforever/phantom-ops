@@ -54,8 +54,12 @@ export class SideMenu {
     contentEl.className = 'side-menu__content';
     contentEl.style.display = 'none';
 
+    const footerEl = document.createElement('div');
+    footerEl.className = 'side-menu__footer';
+
     menu.appendChild(rootView);
     menu.appendChild(contentEl);
+    menu.appendChild(footerEl);
 
     root.appendChild(backdrop);
     root.appendChild(menu);
@@ -65,6 +69,7 @@ export class SideMenu {
     this.backdrop = backdrop;
     this._contentEl = contentEl;
     this._rootView = rootView;
+    this.footerEl = footerEl;
     return this;
   }
 

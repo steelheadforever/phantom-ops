@@ -134,3 +134,8 @@ mapCore.loadAirspaceData().catch((error) => {
 mapCore.loadClassAirspaceData().catch((error) => {
   console.warn('Class B/C/D airspace failed to load:', error);
 });
+
+// Move source status indicator into sidebar footer (created sync by loadAirspaceData above)
+if (mapCore.sourceDebugEl) {
+  sideMenu.footerEl.appendChild(mapCore.sourceDebugEl);
+}

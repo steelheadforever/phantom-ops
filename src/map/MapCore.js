@@ -56,8 +56,9 @@ export class MapCore {
     this.map = L.map('map', {
       center: [29.535, -98.279],
       zoom: 12,
-      zoomControl: true,
+      zoomControl: false,
     });
+    L.control.zoom({ position: 'topright' }).addTo(this.map);
 
     this.layerManager = new LayerManager(this.map).initializePanes();
 

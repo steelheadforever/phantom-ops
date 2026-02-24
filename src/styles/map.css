@@ -24,6 +24,42 @@ body {
   background: #000;
 }
 
+/* ─── Leaflet zoom control (top-right) ────────────────────── */
+
+.leaflet-control-zoom {
+  border: 1px solid var(--blue-border) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  margin-top: 10px !important;
+  margin-right: 10px !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background: var(--bg-bar) !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+  font-family: 'B612 Mono', ui-monospace, monospace !important;
+  font-size: 16px !important;
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--blue-border) !important;
+  display: block !important;
+  transition: background 0.12s, color 0.12s !important;
+}
+
+.leaflet-control-zoom-out {
+  border-bottom: none !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: rgba(43, 58, 171, 0.35) !important;
+  color: var(--gold) !important;
+}
+
 /* Override Leaflet attribution styling */
 .leaflet-control-attribution {
   background: rgba(0, 0, 0, 0.6) !important;
