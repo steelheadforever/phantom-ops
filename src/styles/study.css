@@ -1,0 +1,267 @@
+/* ─── Side-menu additions ─────────────────────────────────── */
+
+/* Content area for pushed sub-panel views */
+.side-menu__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Enabled root-menu button (STUDY, future PLAN) */
+.side-menu__btn--enabled {
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.side-menu__btn--enabled:hover {
+  background: rgba(43, 58, 171, 0.3);
+  color: var(--gold);
+}
+
+/* ─── Sub-panel shared layout ─────────────────────────────── */
+
+.study-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Back button at the top of each sub-panel */
+.panel-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--blue-border);
+  color: var(--gold);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.panel-back-btn:hover {
+  background: rgba(43, 58, 171, 0.25);
+}
+
+/* Group of section buttons inside a sub-panel */
+.panel-btn-group {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--blue-border);
+}
+
+/* Individual section button (e.g. BOLDFACE, FLASHCARDS) */
+.panel-section-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 18px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.panel-section-btn:hover:not(.panel-section-btn--disabled) {
+  background: rgba(43, 58, 171, 0.3);
+  color: var(--gold);
+}
+
+.panel-section-btn--disabled {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: not-allowed;
+}
+
+/* ─── Flashcard overlay ───────────────────────────────────── */
+
+.fc-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  background: rgba(0, 0, 0, 0.65);
+  align-items: center;
+  justify-content: center;
+}
+
+.fc-overlay--active {
+  display: flex;
+}
+
+/* Card */
+.fc-card {
+  width: 520px;
+  max-width: calc(100vw - 40px);
+  background: rgba(14, 22, 52, 0.97);
+  border: 1px solid var(--blue-border);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  overflow: hidden;
+}
+
+/* Header row */
+.fc-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--blue-border);
+  gap: 10px;
+}
+
+.fc-title {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  color: var(--gold);
+  flex: 1;
+}
+
+.fc-progress {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.fc-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+
+.fc-close:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Body */
+.fc-body {
+  padding: 24px 24px 20px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fc-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.fc-label--response {
+  margin-top: 20px;
+}
+
+.fc-condition {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.4;
+}
+
+.fc-response-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fc-steps {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fc-steps li {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+  line-height: 1.4;
+}
+
+/* Footer */
+.fc-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--blue-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fc-btn {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+/* CHECK button — full width, prominent */
+.fc-btn--check {
+  width: 100%;
+  padding: 12px 0;
+  font-size: 13px;
+  background: var(--blue-border);
+  border: 1px solid rgba(43, 58, 171, 0.8);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.fc-btn--check:hover {
+  background: rgba(43, 58, 171, 0.8);
+}
+
+/* Nav row: PREV + NEXT side by side */
+.fc-nav-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* PREV / NEXT buttons */
+.fc-btn--nav {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.fc-btn--nav:hover:not(:disabled) {
+  background: rgba(43, 58, 171, 0.3);
+  border-color: var(--blue-border);
+  color: var(--gold);
+}
+
+.fc-btn--nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

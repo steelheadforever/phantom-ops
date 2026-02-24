@@ -1,10 +1,12 @@
 export class SideMenu {
-  constructor({ planPanel } = {}) {
+  constructor({ planPanel, studyPanel } = {}) {
     this._planPanel = planPanel;
+    this._studyPanel = studyPanel;
     this.el = null;
     this.backdrop = null;
     this._isOpen = false;
     this._contentEl = null;
+    this._rootView = null;
 
     // View stack — each entry is { name, el }
     this._viewStack = [];
@@ -34,11 +36,15 @@ export class SideMenu {
       }
     });
 
-    // STUDY button — still disabled
+    // STUDY button — enabled
     const studyBtn = document.createElement('button');
-    studyBtn.className = 'side-menu__btn';
-    studyBtn.disabled = true;
-    studyBtn.innerHTML = 'STUDY<span class="side-menu__btn-tag">SOON</span>';
+    studyBtn.className = 'side-menu__btn side-menu__btn--enabled';
+    studyBtn.textContent = 'STUDY';
+    studyBtn.addEventListener('click', () => {
+      if (this._studyPanel) {
+        this.pushView('study', this._studyPanel.el);
+      }
+    });
 
     rootView.appendChild(planBtn);
     rootView.appendChild(studyBtn);

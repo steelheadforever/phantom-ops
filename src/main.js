@@ -19,6 +19,8 @@ import { LinePopup } from './ui/plan/LinePopup.js';
 import { PointPopup } from './ui/plan/PointPopup.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
+import { StudyPanel } from './ui/study/StudyPanel.js';
+import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
 
 const mapCore = new MapCore();
 const map = mapCore.init();
@@ -68,11 +70,18 @@ const drawShapesPanel = new DrawShapesPanel({
 });
 const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel });
 
+// ── Study UI ───────────────────────────────────────────────────
+const studyPanel = new StudyPanel();
+const boldfacePanel = new BoldfacePanel();
+
 // ── Top chrome ─────────────────────────────────────────────────
-const sideMenu = new SideMenu({ planPanel }).mount(document.body);
+const sideMenu = new SideMenu({ planPanel, studyPanel }).mount(document.body);
 
 drawShapesPanel._sideMenu = sideMenu;
 planPanel._sideMenu = sideMenu;
+studyPanel._sideMenu = sideMenu;
+studyPanel._boldfacePanel = boldfacePanel;
+boldfacePanel._sideMenu = sideMenu;
 
 new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 
