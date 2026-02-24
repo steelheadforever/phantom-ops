@@ -413,3 +413,82 @@
 .center-marker__dot:active {
   cursor: grabbing;
 }
+
+/* ─── Polygon popup — corners table ─────────────────────────── */
+
+/* Slightly taller popup for the corners table */
+.polygon-popup {
+  width: 280px;
+}
+
+.pp-corners-field {
+  gap: 6px;
+}
+
+.pp-coord-wrap {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+.pp-coord-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.pp-coord-row:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pp-coord-num {
+  color: rgba(255, 255, 255, 0.3);
+  padding: 3px 4px 3px 6px;
+  width: 16px;
+  text-align: right;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.pp-coord-input-cell {
+  padding: 2px 3px;
+  vertical-align: middle;
+}
+
+.pp-coord-input {
+  width: 100%;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+  box-sizing: border-box;
+}
+
+.pp-coord-minus-cell {
+  padding: 2px 4px 2px 2px;
+  vertical-align: middle;
+  width: 20px;
+}
+
+.pp-corner-minus {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.pp-corner-minus:hover {
+  border-color: #e63946;
+  color: #e63946;
+  background: rgba(230, 57, 70, 0.1);
+}

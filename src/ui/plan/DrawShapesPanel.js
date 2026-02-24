@@ -2,12 +2,14 @@
  * DrawShapesPanel — Draw Shapes submenu with Circle/Polygon/Line buttons and a shape table.
  */
 export class DrawShapesPanel {
-  constructor({ sideMenu, shapeManager, coordinateService, circleTool, shapePopup }) {
+  constructor({ sideMenu, shapeManager, coordinateService, circleTool, shapePopup, polygonTool, polygonPopup }) {
     this._sideMenu = sideMenu;
     this._shapeManager = shapeManager;
     this._coordinateService = coordinateService;
     this._circleTool = circleTool;
     this._shapePopup = shapePopup;
+    this._polygonTool = polygonTool;
+    this._polygonPopup = polygonPopup;
 
     // Single shared dropdown element, appended to body
     this._dropdown = this._buildDropdown();
@@ -48,8 +50,14 @@ export class DrawShapesPanel {
       this._circleTool.activate();
     });
 
+    const polygonBtn = this._makeBtn('Polygon', false);
+    polygonBtn.addEventListener('click', () => {
+      this._sideMenu.close();
+      this._polygonTool.activate();
+    });
+
     btnGroup.appendChild(circleBtn);
-    btnGroup.appendChild(this._makeBtn('Polygon', true));
+    btnGroup.appendChild(polygonBtn);
     btnGroup.appendChild(this._makeBtn('Line', true));
     el.appendChild(btnGroup);
 
@@ -94,12 +102,11 @@ export class DrawShapesPanel {
 
     const table = document.createElement('table');
     table.className = 'shape-table';
-
     table.innerHTML = `
       <thead>
         <tr>
           <th>Name</th>
-          <th>Location</th>
+          <th>Info</th>
           <th>Color</th>
           <th>Vis</th>
           <th></th>
@@ -112,8 +119,7 @@ export class DrawShapesPanel {
     this._tableWrap.appendChild(table);
 
     for (const shape of shapes) {
-      const tr = this._makeRow(shape);
-      tbody.appendChild(tr);
+      tbody.appendChild(this._makeRow(shape));
     }
 
     this._initDragDrop(tbody);
@@ -124,14 +130,21 @@ export class DrawShapesPanel {
     tr.dataset.id = shape.id;
     tr.draggable = true;
 
+    // Name
     const nameTd = document.createElement('td');
     nameTd.className = 'shape-table__name';
     nameTd.textContent = shape.name;
 
-    const locTd = document.createElement('td');
-    locTd.className = 'shape-table__loc';
-    locTd.textContent = this._formatCoord(shape.centerLat, shape.centerLng);
+    // Info — location for circles, corner count for polygons
+    const infoTd = document.createElement('td');
+    infoTd.className = 'shape-table__loc';
+    if (shape.type === 'polygon') {
+      infoTd.textContent = `${shape.latlngs?.length ?? 0} pts`;
+    } else {
+      infoTd.textContent = this._formatCoord(shape.centerLat, shape.centerLng);
+    }
 
+    // Color swatch
     const colorTd = document.createElement('td');
     colorTd.className = 'shape-table__color';
     const swatch = document.createElement('span');
@@ -139,6 +152,7 @@ export class DrawShapesPanel {
     swatch.style.background = shape.color;
     colorTd.appendChild(swatch);
 
+    // Visibility toggle
     const visTd = document.createElement('td');
     visTd.className = 'shape-table__vis';
     const eyeBtn = document.createElement('button');
@@ -151,20 +165,21 @@ export class DrawShapesPanel {
     });
     visTd.appendChild(eyeBtn);
 
+    // Three-dot menu
     const dotsTd = document.createElement('td');
     dotsTd.className = 'shape-table__dots-cell';
     const dotsBtn = document.createElement('button');
     dotsBtn.className = 'shape-table__dots';
     dotsBtn.title = 'Options';
-    dotsBtn.innerHTML = '&#8942;'; // vertical ellipsis
+    dotsBtn.innerHTML = '&#8942;';
     dotsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      this._toggleDropdown(dotsBtn, shape.id);
+      this._toggleDropdown(dotsBtn, shape);
     });
     dotsTd.appendChild(dotsBtn);
 
     tr.appendChild(nameTd);
-    tr.appendChild(locTd);
+    tr.appendChild(infoTd);
     tr.appendChild(colorTd);
     tr.appendChild(visTd);
     tr.appendChild(dotsTd);
@@ -181,23 +196,25 @@ export class DrawShapesPanel {
     return el;
   }
 
-  _toggleDropdown(anchorBtn, shapeId) {
-    // If already open for this same button, close
-    if (this._dropdown.dataset.activeId === shapeId && this._dropdown.style.display !== 'none') {
+  _toggleDropdown(anchorBtn, shape) {
+    if (this._dropdown.dataset.activeId === shape.id && this._dropdown.style.display !== 'none') {
       this._hideDropdown();
       return;
     }
 
-    // Populate
     this._dropdown.innerHTML = '';
-    this._dropdown.dataset.activeId = shapeId;
+    this._dropdown.dataset.activeId = shape.id;
 
     const editBtn = document.createElement('button');
     editBtn.className = 'shape-dots-menu__item';
     editBtn.textContent = 'Edit';
     editBtn.addEventListener('click', () => {
       this._hideDropdown();
-      this._shapePopup?.open(shapeId, { isNew: false });
+      if (shape.type === 'polygon') {
+        this._polygonPopup?.open(shape.id, { isNew: false });
+      } else {
+        this._shapePopup?.open(shape.id, { isNew: false });
+      }
     });
 
     const deleteBtn = document.createElement('button');
@@ -205,26 +222,19 @@ export class DrawShapesPanel {
     deleteBtn.textContent = 'Delete';
     deleteBtn.addEventListener('click', () => {
       this._hideDropdown();
-      this._shapeManager.removeShape(shapeId);
+      this._shapeManager.removeShape(shape.id);
     });
 
     this._dropdown.appendChild(editBtn);
     this._dropdown.appendChild(deleteBtn);
 
-    // Position near the anchor button
-    const rect = anchorBtn.getBoundingClientRect();
     this._dropdown.style.display = 'block';
+    const rect = anchorBtn.getBoundingClientRect();
     const ddRect = this._dropdown.getBoundingClientRect();
-
     let top = rect.bottom + 2;
     let left = rect.right - ddRect.width;
-
-    // Keep on screen
     if (left < 4) left = 4;
-    if (top + ddRect.height > window.innerHeight - 4) {
-      top = rect.top - ddRect.height - 2;
-    }
-
+    if (top + ddRect.height > window.innerHeight - 4) top = rect.top - ddRect.height - 2;
     this._dropdown.style.top = `${top}px`;
     this._dropdown.style.left = `${left}px`;
   }
@@ -274,9 +284,7 @@ export class DrawShapesPanel {
       const tgtRow = tbody.querySelector(`tr[data-id="${targetId}"]`);
       if (!srcRow || !tgtRow) return;
 
-      const srcIdx = rows.indexOf(srcRow);
-      const tgtIdx = rows.indexOf(tgtRow);
-      if (srcIdx < tgtIdx) {
+      if (rows.indexOf(srcRow) < rows.indexOf(tgtRow)) {
         tbody.insertBefore(srcRow, tgtRow.nextSibling);
       } else {
         tbody.insertBefore(srcRow, tgtRow);

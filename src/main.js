@@ -10,7 +10,9 @@ import { AirspaceMenu } from './ui/AirspaceMenu.js';
 import { BrightnessSlider } from './ui/BrightnessSlider.js';
 import { ShapeManager } from './services/drawing/ShapeManager.js';
 import { CircleDrawTool } from './services/drawing/CircleDrawTool.js';
+import { PolygonDrawTool } from './services/drawing/PolygonDrawTool.js';
 import { ShapePopup } from './ui/plan/ShapePopup.js';
+import { PolygonPopup } from './ui/plan/PolygonPopup.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
 
@@ -26,22 +28,31 @@ const bottomBar = new BottomBar().mount(document.body);
 const coordinateService = new CoordinateService({ statusBar: bottomBar });
 const coordinateParser = new CoordinateParser();
 
-// ── Plan UI (built before SideMenu so it can be passed in) ────
-// ShapePopup and CircleDrawTool depend on each other; use late-binding
+// ── Plan UI ────────────────────────────────────────────────────
+// Popups and tools depend on each other — use late-binding for circular refs.
+
 const shapePopup = new ShapePopup({ shapeManager, coordinateService, coordinateParser, circleTool: null, map });
 shapePopup.mount(document.body);
 
+const polygonPopup = new PolygonPopup({ shapeManager, coordinateService, coordinateParser, polygonTool: null, map });
+polygonPopup.mount(document.body);
+
 const circleTool = new CircleDrawTool({ map, shapeManager, shapePopup });
-// Wire the popup ↔ tool reference
 shapePopup._circleTool = circleTool;
 
-const drawShapesPanel = new DrawShapesPanel({ sideMenu: null, shapeManager, coordinateService, circleTool, shapePopup });
+const polygonTool = new PolygonDrawTool({ map, shapeManager, polygonPopup });
+polygonPopup._polygonTool = polygonTool;
+
+const drawShapesPanel = new DrawShapesPanel({
+  sideMenu: null, shapeManager, coordinateService,
+  circleTool, shapePopup,
+  polygonTool, polygonPopup,
+});
 const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel });
 
 // ── Top chrome ─────────────────────────────────────────────────
 const sideMenu = new SideMenu({ planPanel }).mount(document.body);
 
-// Patch panels with sideMenu reference now that it exists
 drawShapesPanel._sideMenu = sideMenu;
 planPanel._sideMenu = sideMenu;
 
