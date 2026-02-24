@@ -7,13 +7,24 @@ import { BottomBar } from './ui/BottomBar.js';
 import { BaseLayerMenu } from './ui/BaseLayerMenu.js';
 import { AirspaceMenu } from './ui/AirspaceMenu.js';
 import { BrightnessSlider } from './ui/BrightnessSlider.js';
+import { StudyPanel } from './ui/study/StudyPanel.js';
+import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
 
 const mapCore = new MapCore();
 const map = mapCore.init();
 
+// Study sub-panels (constructed before SideMenu so late bindings can be set)
+const studyPanel = new StudyPanel();
+const boldfacePanel = new BoldfacePanel();
+
 // Top chrome
-const sideMenu = new SideMenu().mount(document.body);
+const sideMenu = new SideMenu({ studyPanel }).mount(document.body);
 new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
+
+// Late-bind sideMenu references into panels
+studyPanel._sideMenu = sideMenu;
+studyPanel._boldfacePanel = boldfacePanel;
+boldfacePanel._sideMenu = sideMenu;
 
 // Bottom chrome
 const bottomBar = new BottomBar().mount(document.body);
