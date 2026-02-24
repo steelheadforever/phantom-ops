@@ -1,8 +1,14 @@
 export class SideMenu {
-  constructor() {
+  constructor({ planPanel } = {}) {
+    this._planPanel = planPanel;
     this.el = null;
     this.backdrop = null;
     this._isOpen = false;
+    this._contentEl = null;
+
+    // View stack — each entry is { name, el }
+    this._viewStack = [];
+
     this._onKeyDown = this._onKeyDown.bind(this);
   }
 
@@ -14,18 +20,36 @@ export class SideMenu {
     const menu = document.createElement('div');
     menu.className = 'side-menu';
 
-    const items = [
-      { label: 'PLAN' },
-      { label: 'STUDY' },
-    ];
+    // Root view: fixed button list at the top
+    const rootView = document.createElement('div');
+    rootView.className = 'side-menu__root-view';
 
-    items.forEach(({ label }) => {
-      const btn = document.createElement('button');
-      btn.className = 'side-menu__btn';
-      btn.disabled = true;
-      btn.innerHTML = `${label}<span class="side-menu__btn-tag">SOON</span>`;
-      menu.appendChild(btn);
+    // PLAN button — enabled
+    const planBtn = document.createElement('button');
+    planBtn.className = 'side-menu__btn side-menu__btn--enabled';
+    planBtn.textContent = 'PLAN';
+    planBtn.addEventListener('click', () => {
+      if (this._planPanel) {
+        this.pushView('plan', this._planPanel.el);
+      }
     });
+
+    // STUDY button — still disabled
+    const studyBtn = document.createElement('button');
+    studyBtn.className = 'side-menu__btn';
+    studyBtn.disabled = true;
+    studyBtn.innerHTML = 'STUDY<span class="side-menu__btn-tag">SOON</span>';
+
+    rootView.appendChild(planBtn);
+    rootView.appendChild(studyBtn);
+
+    // Content area for pushed views
+    const contentEl = document.createElement('div');
+    contentEl.className = 'side-menu__content';
+    contentEl.style.display = 'none';
+
+    menu.appendChild(rootView);
+    menu.appendChild(contentEl);
 
     root.appendChild(backdrop);
     root.appendChild(menu);
@@ -33,7 +57,26 @@ export class SideMenu {
 
     this.el = menu;
     this.backdrop = backdrop;
+    this._contentEl = contentEl;
+    this._rootView = rootView;
     return this;
+  }
+
+  /**
+   * Push a named view onto the stack, swapping the sidebar content area.
+   * @param {string} name
+   * @param {HTMLElement} el
+   */
+  pushView(name, el) {
+    this._viewStack.push({ name, el });
+    this._renderCurrentView();
+  }
+
+  /** Pop the top view off the stack, returning to the previous one. */
+  popView() {
+    if (this._viewStack.length === 0) return;
+    this._viewStack.pop();
+    this._renderCurrentView();
   }
 
   open() {
@@ -52,7 +95,32 @@ export class SideMenu {
     this._isOpen ? this.close() : this.open();
   }
 
+  // ─── private ────────────────────────────────────────────────────────────
+
+  _renderCurrentView() {
+    if (!this._contentEl || !this._rootView) return;
+
+    if (this._viewStack.length === 0) {
+      // Back to root
+      this._contentEl.style.display = 'none';
+      this._contentEl.innerHTML = '';
+      this._rootView.style.display = '';
+    } else {
+      this._rootView.style.display = 'none';
+      this._contentEl.style.display = 'flex';
+      this._contentEl.innerHTML = '';
+      const { el } = this._viewStack[this._viewStack.length - 1];
+      this._contentEl.appendChild(el);
+    }
+  }
+
   _onKeyDown(e) {
-    if (e.key === 'Escape' && this._isOpen) this.close();
+    if (e.key === 'Escape' && this._isOpen) {
+      if (this._viewStack.length > 0) {
+        this.popView();
+      } else {
+        this.close();
+      }
+    }
   }
 }

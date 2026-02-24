@@ -79,8 +79,8 @@
 .side-menu {
   position: fixed;
   top: var(--top-bar-height);
-  left: -220px;
-  width: 200px;
+  left: -280px;
+  width: 260px;
   bottom: 0;
   z-index: 1999;
   background: var(--bg-bar);
@@ -133,4 +133,12 @@
 
 .side-menu__backdrop.open {
   display: block;
+}
+
+/* Content area for pushed views (plan panels etc.) */
+.side-menu__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
