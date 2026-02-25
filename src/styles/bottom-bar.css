@@ -126,6 +126,60 @@
   margin: 4px 0;
 }
 
+/* ─── Point Search ────────────────────────────────────────── */
+
+.pt-search {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.pt-search__input {
+  width: 80px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 0 8px;
+  outline: none;
+  text-transform: uppercase;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.pt-search__input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.pt-search__input:focus {
+  border-color: var(--gold);
+  color: #fff;
+}
+
+.pt-search__input--error {
+  border-color: #e63946;
+  color: #e63946;
+  animation: pt-shake 0.25s ease;
+}
+
+.pt-search__go {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  width: auto;
+  padding: 0 8px;
+}
+
+@keyframes pt-shake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-3px); }
+  75%       { transform: translateX(3px); }
+}
+
 /* ─── Measure Tool label (map overlay) ────────────────────── */
 
 .mt-label {

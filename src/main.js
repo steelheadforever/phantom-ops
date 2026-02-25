@@ -18,6 +18,7 @@ import { PolygonPopup } from './ui/plan/PolygonPopup.js';
 import { LinePopup } from './ui/plan/LinePopup.js';
 import { PointPopup } from './ui/plan/PointPopup.js';
 import { MeasureTool } from './ui/MeasureTool.js';
+import { PointSearchTool } from './ui/PointSearchTool.js';
 import { ContextMenu } from './ui/ContextMenu.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
@@ -88,6 +89,7 @@ boldfacePanel._sideMenu = sideMenu;
 new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 
 // ── Bottom chrome ──────────────────────────────────────────────
+new PointSearchTool({ map, bottomBar });
 const measureTool = new MeasureTool({ map, bottomBar });
 new ContextMenu({
   map,

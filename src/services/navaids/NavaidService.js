@@ -5,6 +5,56 @@ const FIX_ENDPOINT =
   'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/DesignatedPoint/FeatureServer/0/query';
 
 /**
+ * Search for a navaid or IFR fix by exact IDENT, CONUS-wide.
+ * Tries navaids first, then IFR fixes.
+ * @param {string} ident - uppercase identifier (e.g. 'SAT', 'LUVLA')
+ * @returns {Promise<{lat: number, lon: number, name: string, type: string} | null>}
+ */
+export async function searchPointByIdent(ident) {
+  // Sanitise: aviation idents are alphanumeric only
+  const safe = ident.replace(/[^A-Z0-9]/g, '');
+  if (!safe) return null;
+
+  // Query navaids and fixes in parallel
+  const [navResp, fixResp] = await Promise.all([
+    fetch(`${NAVAID_ENDPOINT}?${new URLSearchParams({
+      where: `IDENT = '${safe}'`,
+      outFields: 'IDENT,NAME_TXT,CLASS_TXT',
+      returnGeometry: 'true',
+      outSR: '4326',
+      f: 'geojson',
+    })}`),
+    fetch(`${FIX_ENDPOINT}?${new URLSearchParams({
+      where: `IDENT_TXT = '${safe}'`,
+      outFields: 'IDENT_TXT,NAME_TXT,TYPE_CODE',
+      returnGeometry: 'true',
+      outSR: '4326',
+      f: 'geojson',
+    })}`),
+  ]);
+
+  if (navResp.ok) {
+    const navJson = await navResp.json();
+    const f = navJson.features?.[0];
+    if (f) {
+      const [lon, lat] = f.geometry.coordinates;
+      return { lat, lon, name: f.properties.NAME_TXT ?? safe, type: f.properties.CLASS_TXT ?? 'NAVAID' };
+    }
+  }
+
+  if (fixResp.ok) {
+    const fixJson = await fixResp.json();
+    const f = fixJson.features?.[0];
+    if (f) {
+      const [lon, lat] = f.geometry.coordinates;
+      return { lat, lon, name: f.properties.NAME_TXT ?? safe, type: f.properties.TYPE_CODE ?? 'FIX' };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Fetch all US navaids from FAA ADDS ArcGIS FeatureServer.
  * Paginates automatically (max 1000 records/page, ~3 pages for full US).
  * @returns {Promise<GeoJSON.Feature[]>}
