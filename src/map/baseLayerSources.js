@@ -20,6 +20,8 @@ export function createBaseLayerSourceDefinitions(manifest) {
       sublayers: layer.type === 'tile-composite' ? layer.sublayers : undefined,
       options: {
         maxZoom: layer.maxZoom ?? 18,
+        ...(layer.minNativeZoom != null && { minNativeZoom: layer.minNativeZoom }),
+        ...(layer.maxNativeZoom != null && { maxNativeZoom: layer.maxNativeZoom }),
         attribution: layer.attribution,
       },
       fallbackUrls: Array.isArray(layer.fallbackUrls) ? [...layer.fallbackUrls] : [],

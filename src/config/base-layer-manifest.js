@@ -34,26 +34,30 @@ export const BASE_LAYER_MANIFEST = Object.freeze({
     {
       id: 'base-vfr-sectional',
       label: 'VFR Sectional (FAA)',
-      // tile-composite: sectional renders at zoom 8-12; terminal area charts overlay at zoom 10-12
-      // where terminal tiles exist they take priority; Leaflet handles missing tiles gracefully
-      type: 'tile-composite',
+      type: 'tile',
+      url: 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}',
+      fallbackUrls: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
       attribution: 'FAA AIS chart-derived tiles (planning use only)',
+      minNativeZoom: 8,
+      maxNativeZoom: 12,
       maxZoom: 18,
       isDefault: false,
       cycle: 'FAA current',
-      version: 'vfr-sectional-v2',
-      sublayers: [
-        {
-          url: 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}',
-          minNativeZoom: 8,
-          maxNativeZoom: 12,
-        },
-        {
-          url: 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Terminal/MapServer/tile/{z}/{y}/{x}',
-          minNativeZoom: 10,
-          maxNativeZoom: 12,
-        },
-      ],
+      version: 'vfr-sectional-v3',
+    },
+    {
+      id: 'base-vfr-terminal',
+      label: 'VFR Terminal (FAA)',
+      type: 'tile',
+      url: 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Terminal/MapServer/tile/{z}/{y}/{x}',
+      fallbackUrls: ['https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}'],
+      attribution: 'FAA AIS chart-derived tiles (planning use only)',
+      minNativeZoom: 10,
+      maxNativeZoom: 12,
+      maxZoom: 18,
+      isDefault: false,
+      cycle: 'FAA current',
+      version: 'vfr-terminal-v1',
     },
     {
       id: 'base-ifr-low',
