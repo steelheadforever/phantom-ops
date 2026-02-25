@@ -4,8 +4,9 @@ import { makeNavaidIcon } from './navaidIcons.js';
 const MIN_ZOOM = 8;
 
 export class NavaidLayer {
-  constructor(map) {
+  constructor(map, { pane } = {}) {
     this.map = map;
+    this._pane = pane;
     this.group = L.layerGroup();
 
     /** @type {GeoJSON.Feature[] | null} null = not yet fetched */
@@ -64,6 +65,7 @@ export class NavaidLayer {
       this.group.addLayer(L.marker([lat, lon], {
         icon: makeNavaidIcon(CLASS_TXT, IDENT ?? ''),
         interactive: false,
+        ...(this._pane ? { pane: this._pane } : {}),
       }));
     }
     this._rendered = true;

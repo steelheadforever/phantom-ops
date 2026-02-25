@@ -26,8 +26,9 @@ function makeLabelIcon(code) {
 }
 
 export class CGRSLayer {
-  constructor(map) {
+  constructor(map, { pane } = {}) {
     this.map = map;
+    this._pane = pane;
     this.group = L.layerGroup();
 
     map.on('zoomend', () => this._onZoomMove());
@@ -57,13 +58,14 @@ export class CGRSLayer {
     for (const cell of iterateCGRSCells(bounds, precision)) {
       this.group.addLayer(L.rectangle(
         [[cell.swLat, cell.swLon], [cell.neLat, cell.neLon]],
-        CGRS_RECT_STYLE,
+        { ...CGRS_RECT_STYLE, ...(this._pane ? { pane: this._pane } : {}) },
       ));
 
       const center = [(cell.swLat + cell.neLat) / 2, (cell.swLon + cell.neLon) / 2];
       this.group.addLayer(L.marker(center, {
         icon: makeLabelIcon(cell.code),
         interactive: false,
+        ...(this._pane ? { pane: this._pane } : {}),
       }));
     }
   }

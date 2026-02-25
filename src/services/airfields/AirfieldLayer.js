@@ -19,8 +19,9 @@ function makeAirfieldIcon(ident, isMilitary) {
 }
 
 export class AirfieldLayer {
-  constructor(map) {
+  constructor(map, { pane } = {}) {
     this.map = map;
+    this._pane = pane;
     this.group = L.layerGroup();
 
     /** @type {GeoJSON.Feature[] | null} null = not yet fetched */
@@ -59,6 +60,7 @@ export class AirfieldLayer {
       this.group.addLayer(L.marker([lat, lon], {
         icon: makeAirfieldIcon(ident, isMilitary),
         interactive: false,
+        ...(this._pane ? { pane: this._pane } : {}),
       }));
     }
   }

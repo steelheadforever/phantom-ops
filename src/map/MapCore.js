@@ -5,6 +5,7 @@ import { AIRSPACE_STYLE_BY_KIND, mapAirspaceKind } from '../services/airspace/ai
 import { BASE_LAYER_SOURCE_DEFINITIONS, createBaseTileLayer } from './baseLayerSources.js';
 import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPreferences.js';
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
+import { PANE_IDS } from './layerZIndex.js';
 import { CGRSLayer } from '../services/cgrs/CGRSLayer.js';
 import { NavaidLayer } from '../services/navaids/NavaidLayer.js';
 import { FixLayer } from '../services/navaids/FixLayer.js';
@@ -64,26 +65,26 @@ export class MapCore {
 
     this.layerManager = new LayerManager(this.map).initializePanes();
 
-    // CGRS killbox grid — lowest overlay layer (pane z-index 300, below airspace at 400)
-    this.cgrsLayer = new CGRSLayer(this.map);
+    // CGRS killbox grid — below all airspace/nav layers (z-index 300)
+    this.cgrsLayer = new CGRSLayer(this.map, { pane: PANE_IDS.GARS });
     this.layerManager.registerLayer(CGRS_LAYER_DEF.id, this.cgrsLayer.group, 'gars');
     this.layerManager.setLayerVisibility(CGRS_LAYER_DEF.id, true);
 
-    // Navaids & IFR fixes — pane z-index 450, zoom-gated at >=8
-    this.navaidLayer = new NavaidLayer(this.map);
+    // Nav point layers — each gets its own pane for precise z-ordering
+    this.navaidLayer = new NavaidLayer(this.map, { pane: PANE_IDS.NAVAIDS });
     this.layerManager.registerLayer(NAVAID_LAYER_DEF.id, this.navaidLayer.group, 'navaids');
     this.layerManager.setLayerVisibility(NAVAID_LAYER_DEF.id, true);
 
-    this.fixHighLayer = new FixLayer(this.map, 'H');
-    this.layerManager.registerLayer(FIX_HIGH_LAYER_DEF.id, this.fixHighLayer.group, 'navaids');
+    this.fixHighLayer = new FixLayer(this.map, 'H', { pane: PANE_IDS.IFR_HIGH });
+    this.layerManager.registerLayer(FIX_HIGH_LAYER_DEF.id, this.fixHighLayer.group, 'ifr-high');
     this.layerManager.setLayerVisibility(FIX_HIGH_LAYER_DEF.id, true);
 
-    this.fixLowLayer = new FixLayer(this.map, 'L');
-    this.layerManager.registerLayer(FIX_LOW_LAYER_DEF.id, this.fixLowLayer.group, 'navaids');
+    this.fixLowLayer = new FixLayer(this.map, 'L', { pane: PANE_IDS.IFR_LOW });
+    this.layerManager.registerLayer(FIX_LOW_LAYER_DEF.id, this.fixLowLayer.group, 'ifr-low');
     this.layerManager.setLayerVisibility(FIX_LOW_LAYER_DEF.id, false);
 
-    this.airfieldLayer = new AirfieldLayer(this.map);
-    this.layerManager.registerLayer(AIRFIELD_LAYER_DEF.id, this.airfieldLayer.group, 'navaids');
+    this.airfieldLayer = new AirfieldLayer(this.map, { pane: PANE_IDS.AIRFIELDS });
+    this.layerManager.registerLayer(AIRFIELD_LAYER_DEF.id, this.airfieldLayer.group, 'airfields');
     this.layerManager.setLayerVisibility(AIRFIELD_LAYER_DEF.id, false);
 
     const baseLayerLabels = {};
@@ -110,11 +111,21 @@ export class MapCore {
       persistBaseLayerId(this.storage, initialBaseLayerId);
     }
 
-    // Create 6 separate airspace layers
+    // Airspace kind → LayerManager kind (each gets its own pane for z-ordering)
+    const AIRSPACE_KIND_TO_LAYER_KIND = {
+      classB: 'airspace-class-b',
+      classC: 'airspace-class-c',
+      classD: 'airspace-class-d',
+      moa: 'airspace-moa',
+      alert: 'airspace-alert',
+      restricted: 'airspace-restricted',
+    };
+
     for (const def of AIRSPACE_LAYER_DEFS) {
       const style = AIRSPACE_STYLE_BY_KIND[def.kind] ?? AIRSPACE_STYLE_BY_KIND.fallback;
       const layer = L.geoJSON(null, { style: () => style });
-      const layerOptions = this.layerManager.registerLayer(def.id, layer, 'airspace');
+      const layerKind = AIRSPACE_KIND_TO_LAYER_KIND[def.kind] ?? 'airspace-restricted';
+      const layerOptions = this.layerManager.registerLayer(def.id, layer, layerKind);
       if (typeof layer.options === 'object') {
         Object.assign(layer.options, layerOptions);
       }

@@ -10,9 +10,10 @@ export class FixLayer {
    * @param {L.Map} map
    * @param {'H'|'L'} chartFilter - 'H' for high enroute, 'L' for low enroute
    */
-  constructor(map, chartFilter) {
+  constructor(map, chartFilter, { pane } = {}) {
     this.map = map;
     this.chartFilter = chartFilter;
+    this._pane = pane;
     this.group = L.layerGroup();
 
     this._abortController = null;
@@ -79,6 +80,7 @@ export class FixLayer {
         this.group.addLayer(L.marker([lat, lon], {
           icon: makeFixIcon(TYPE_CODE, IDENT_TXT ?? ''),
           interactive: false,
+          ...(this._pane ? { pane: this._pane } : {}),
         }));
       }
     } catch (err) {
