@@ -1,4 +1,5 @@
-const DEFAULT_TILE_PROBE = Object.freeze({ z: 6, x: 16, y: 25 });
+// z=8 tile over Texas (Randolph AFB area) — within range of all FAA chart services (minLOD 7–8)
+const DEFAULT_TILE_PROBE = Object.freeze({ z: 8, x: 58, y: 106 });
 
 function withTimeout(fetchImpl, timeoutMs) {
   return async (url) => {

@@ -258,7 +258,14 @@ export class MapCore {
 
   #registerBaseLayer(layerId, layer) {
     const options = this.layerManager.registerLayer(layerId, layer, 'base');
-    if (typeof layer.options === 'object') {
+    if (typeof layer.eachLayer === 'function') {
+      // Composite layer group — propagate pane to each sublayer
+      layer.eachLayer((sublayer) => {
+        if (typeof sublayer.options === 'object') {
+          Object.assign(sublayer.options, options);
+        }
+      });
+    } else if (typeof layer.options === 'object') {
       Object.assign(layer.options, options);
     }
   }

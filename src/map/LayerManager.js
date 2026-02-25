@@ -100,6 +100,10 @@ export class LayerManager {
       if (entry.kind !== 'base') continue;
       if (typeof entry.layer.setOpacity === 'function') {
         entry.layer.setOpacity(opacity);
+      } else if (typeof entry.layer.eachLayer === 'function') {
+        entry.layer.eachLayer((sub) => {
+          if (typeof sub.setOpacity === 'function') sub.setOpacity(opacity);
+        });
       }
     }
     return opacity;
