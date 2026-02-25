@@ -37,6 +37,10 @@ export class MeasureTool {
     this._buildButton(bottomBar);
   }
 
+  isActive() {
+    return this._state !== 'idle';
+  }
+
   // ─── private ────────────────────────────────────────────────────────────
 
   _buildButton(bottomBar) {
