@@ -21,7 +21,7 @@ body {
   left: 0;
   right: 0;
   bottom: var(--bottom-bar-height);
-  background: #0d1628;
+  background: #000;
 }
 
 /* ─── Leaflet zoom control (top-right) ────────────────────── */

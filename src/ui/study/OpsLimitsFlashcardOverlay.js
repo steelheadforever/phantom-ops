@@ -18,7 +18,7 @@ const OPS_LIMITS = [
     title: 'EGT',
     lines: [
       { prompt: 'MIN:', answer: '300 °C' },
-      { prompt: 'NORMAL: IN-FLIGHT RANGE:', answer: '350 - 650 °C' },
+      { prompt: 'NORMAL IN-FLIGHT RANGE:', answer: '350 - 650 °C' },
       { prompt: 'MAX:', answer: '675 °C' },
     ],
   },
