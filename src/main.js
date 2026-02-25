@@ -17,6 +17,7 @@ import { ShapePopup } from './ui/plan/ShapePopup.js';
 import { PolygonPopup } from './ui/plan/PolygonPopup.js';
 import { LinePopup } from './ui/plan/LinePopup.js';
 import { PointPopup } from './ui/plan/PointPopup.js';
+import { MeasureTool } from './ui/MeasureTool.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
 import { StudyPanel } from './ui/study/StudyPanel.js';
@@ -86,6 +87,7 @@ boldfacePanel._sideMenu = sideMenu;
 new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 
 // ── Bottom chrome ──────────────────────────────────────────────
+new MeasureTool({ map, bottomBar });
 new BaseLayerMenu({ mapCore, bottomBar }).mount();
 const AIRSPACE_CATEGORIES = [
   {

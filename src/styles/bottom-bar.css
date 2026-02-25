@@ -126,6 +126,21 @@
   margin: 4px 0;
 }
 
+/* ─── Measure Tool label (map overlay) ────────────────────── */
+
+.mt-label {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: #f5a800;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 6px));
+  display: inline-block;
+}
+
 /* ─── Airspace Menu Accordion ─────────────────────────────── */
 
 .am-category-header {
