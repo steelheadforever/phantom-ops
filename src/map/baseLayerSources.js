@@ -40,15 +40,19 @@ export const BASE_LAYER_SOURCE_DEFINITIONS = Object.freeze(
   createBaseLayerSourceDefinitions(BASE_LAYER_MANIFEST),
 );
 
+// Extra tiles loaded outside the viewport edge to reduce visible loading gaps
+const TILE_BUFFER_DEFAULTS = { keepBuffer: 4 };
+
 export function createBaseTileLayer(definition, leafletLib = L) {
   if (definition.type === 'tile') {
-    return leafletLib.tileLayer(definition.url, definition.options ?? {});
+    return leafletLib.tileLayer(definition.url, { ...TILE_BUFFER_DEFAULTS, ...definition.options });
   }
 
   if (definition.type === 'tile-composite') {
     const group = leafletLib.layerGroup();
     for (const sub of definition.sublayers ?? []) {
       group.addLayer(leafletLib.tileLayer(sub.url, {
+        ...TILE_BUFFER_DEFAULTS,
         ...definition.options,
         minNativeZoom: sub.minNativeZoom,
         maxNativeZoom: sub.maxNativeZoom,
