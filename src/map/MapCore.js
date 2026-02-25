@@ -8,6 +8,7 @@ import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.
 import { CGRSLayer } from '../services/cgrs/CGRSLayer.js';
 import { NavaidLayer } from '../services/navaids/NavaidLayer.js';
 import { FixLayer } from '../services/navaids/FixLayer.js';
+import { AirfieldLayer } from '../services/airfields/AirfieldLayer.js';
 
 const AVIATION_BASE_IDS = ['base-vfr-sectional', 'base-ifr-low', 'base-ifr-high'];
 
@@ -15,6 +16,7 @@ export const CGRS_LAYER_DEF = Object.freeze({ id: 'cgrs-grid', label: 'Kill Box'
 export const NAVAID_LAYER_DEF = Object.freeze({ id: 'navaids', label: 'Navaids' });
 export const FIX_HIGH_LAYER_DEF = Object.freeze({ id: 'ifr-fixes-high', label: 'IFR High Fixes' });
 export const FIX_LOW_LAYER_DEF = Object.freeze({ id: 'ifr-fixes-low', label: 'IFR Low Fixes' });
+export const AIRFIELD_LAYER_DEF = Object.freeze({ id: 'airfields', label: 'Airfields' });
 
 export const AIRSPACE_LAYER_DEFS = [
   { id: 'airspace-class-b', label: 'Class B', kind: 'classB' },
@@ -79,6 +81,10 @@ export class MapCore {
     this.fixLowLayer = new FixLayer(this.map, 'L');
     this.layerManager.registerLayer(FIX_LOW_LAYER_DEF.id, this.fixLowLayer.group, 'navaids');
     this.layerManager.setLayerVisibility(FIX_LOW_LAYER_DEF.id, false);
+
+    this.airfieldLayer = new AirfieldLayer(this.map);
+    this.layerManager.registerLayer(AIRFIELD_LAYER_DEF.id, this.airfieldLayer.group, 'navaids');
+    this.layerManager.setLayerVisibility(AIRFIELD_LAYER_DEF.id, false);
 
     const baseLayerLabels = {};
 

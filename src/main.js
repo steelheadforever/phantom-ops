@@ -115,6 +115,7 @@ const AIRSPACE_CATEGORIES = [
       { id: 'navaids',        label: 'Navaids' },
       { id: 'ifr-fixes-high', label: 'IFR High' },
       { id: 'ifr-fixes-low',  label: 'IFR Low',  defaultOn: false },
+      { id: 'airfields',      label: 'Airfields', defaultOn: false },
     ],
   },
   {
