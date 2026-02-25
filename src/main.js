@@ -109,6 +109,7 @@ const AIRSPACE_CATEGORIES = [
       { id: 'airspace-class-b', label: 'Class B' },
       { id: 'airspace-class-c', label: 'Class C' },
       { id: 'airspace-class-d', label: 'Class D' },
+      { id: 'airfields',        label: 'Airfields', defaultOn: false },
     ],
   },
   {
@@ -126,7 +127,6 @@ const AIRSPACE_CATEGORIES = [
       { id: 'navaids',        label: 'Navaids' },
       { id: 'ifr-fixes-high', label: 'IFR High' },
       { id: 'ifr-fixes-low',  label: 'IFR Low',  defaultOn: false },
-      { id: 'airfields',      label: 'Airfields', defaultOn: false },
     ],
   },
   {
