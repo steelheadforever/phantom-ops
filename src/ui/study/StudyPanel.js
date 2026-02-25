@@ -2,6 +2,7 @@ export class StudyPanel {
   constructor() {
     this._sideMenu = null;
     this._boldfacePanel = null;
+    this._opsLimitsPanel = null;
     this.el = this._build();
   }
 
@@ -27,9 +28,13 @@ export class StudyPanel {
     });
 
     const opsLimits = document.createElement('button');
-    opsLimits.className = 'panel-section-btn panel-section-btn--disabled';
-    opsLimits.disabled = true;
-    opsLimits.innerHTML = 'OPS LIMITS<span class="side-menu__btn-tag">SOON</span>';
+    opsLimits.className = 'panel-section-btn';
+    opsLimits.textContent = 'OPS LIMITS';
+    opsLimits.addEventListener('click', () => {
+      if (this._opsLimitsPanel && this._sideMenu) {
+        this._sideMenu.pushView('ops-limits', this._opsLimitsPanel.el);
+      }
+    });
 
     btnGroup.appendChild(boldface);
     btnGroup.appendChild(opsLimits);

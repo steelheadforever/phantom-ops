@@ -265,3 +265,28 @@
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+/* ─── Ops Limits card lines ───────────────────────────────── */
+
+.fc-ol-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fc-ol-line {
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.fc-ol-blank {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.fc-ol-answer {
+  color: var(--gold);
+  font-weight: 700;
+}

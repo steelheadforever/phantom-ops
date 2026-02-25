@@ -25,6 +25,7 @@ import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
 import { StudyPanel } from './ui/study/StudyPanel.js';
 import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
+import { OpsLimitsPanel } from './ui/study/OpsLimitsPanel.js';
 
 const mapCore = new MapCore();
 const map = mapCore.init();
@@ -77,6 +78,7 @@ const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel });
 // ── Study UI ───────────────────────────────────────────────────
 const studyPanel = new StudyPanel();
 const boldfacePanel = new BoldfacePanel();
+const opsLimitsPanel = new OpsLimitsPanel();
 
 // ── Top chrome ─────────────────────────────────────────────────
 const sideMenu = new SideMenu({ planPanel, studyPanel }).mount(document.body);
@@ -85,7 +87,9 @@ drawShapesPanel._sideMenu = sideMenu;
 planPanel._sideMenu = sideMenu;
 studyPanel._sideMenu = sideMenu;
 studyPanel._boldfacePanel = boldfacePanel;
+studyPanel._opsLimitsPanel = opsLimitsPanel;
 boldfacePanel._sideMenu = sideMenu;
+opsLimitsPanel._sideMenu = sideMenu;
 
 new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 
