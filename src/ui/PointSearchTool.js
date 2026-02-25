@@ -16,7 +16,7 @@ export class PointSearchTool {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'pt-search__input';
-    input.placeholder = 'IDENT';
+    input.placeholder = 'search';
     input.maxLength = 7;
     input.autocomplete = 'off';
     input.spellcheck = false;

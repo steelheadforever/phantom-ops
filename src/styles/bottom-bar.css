@@ -16,8 +16,21 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
-.bottom-bar__coord {
+.bottom-bar__left {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bottom-bar__left-controls {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.bottom-bar__coord {
   font-family: 'B612 Mono', ui-monospace, monospace;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -28,11 +41,20 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 80px;
   transition: color 0.15s;
 }
 
 .bottom-bar__coord:hover {
   color: var(--gold);
+}
+
+.bottom-bar__mid-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .bottom-bar__controls {
@@ -126,6 +148,44 @@
   margin: 4px 0;
 }
 
+/* ─── Scratchpad ──────────────────────────────────────────── */
+
+.scratchpad {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scratchpad__input {
+  width: 148px; /* ~20 monospace chars */
+  height: 26px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 0 8px;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.scratchpad__input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.scratchpad__input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+/* Scratchpad icon buttons match input height */
+.scratchpad .bar-btn {
+  width: 26px;
+  height: 26px;
+}
+
 /* ─── Point Search ────────────────────────────────────────── */
 
 .pt-search {
@@ -137,7 +197,7 @@
 
 .pt-search__input {
   width: 80px;
-  height: 28px;
+  height: 26px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
@@ -171,6 +231,7 @@
   font-size: 10px;
   letter-spacing: 0.1em;
   width: auto;
+  height: 26px;
   padding: 0 8px;
 }
 
