@@ -43,9 +43,9 @@ export class AirspaceMenu {
       header.className = 'am-category-header';
       header.innerHTML = `${CHEVRON_SVG}<span>${cat.label}</span>`;
 
-      // Category body
+      // Category body — starts collapsed
       const body = document.createElement('div');
-      body.className = 'am-category-body am-category-body--open';
+      body.className = 'am-category-body';
       this._categoryBodies.set(cat.label, body);
 
       // Build layer rows
@@ -57,9 +57,6 @@ export class AirspaceMenu {
         const open = body.classList.toggle('am-category-body--open');
         header.classList.toggle('am-category-header--open', open);
       });
-
-      // Start expanded
-      header.classList.add('am-category-header--open');
 
       popup.appendChild(header);
       popup.appendChild(body);
@@ -98,7 +95,7 @@ export class AirspaceMenu {
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    cb.checked = true;
+    cb.checked = def.defaultOn ?? true;
 
     cb.addEventListener('change', () => {
       this.layerManager.setLayerVisibility(def.id, cb.checked);

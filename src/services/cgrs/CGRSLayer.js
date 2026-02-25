@@ -18,7 +18,7 @@ function getPrecision(zoom) {
 
 function makeLabelIcon(code) {
   return L.divIcon({
-    html: `<span style="font:9px 'B612 Mono',monospace;color:rgba(200,200,200,0.7);white-space:nowrap;pointer-events:none">${code}</span>`,
+    html: `<span style="font:9px 'B612 Mono',monospace;color:rgba(200,200,200,0.7);white-space:nowrap;pointer-events:none;display:block;transform:translate(-50%,-50%)">${code}</span>`,
     className: '',
     iconSize: [0, 0],
     iconAnchor: [0, 0],

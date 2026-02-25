@@ -78,7 +78,7 @@ export class MapCore {
 
     this.fixLowLayer = new FixLayer(this.map, 'L');
     this.layerManager.registerLayer(FIX_LOW_LAYER_DEF.id, this.fixLowLayer.group, 'navaids');
-    this.layerManager.setLayerVisibility(FIX_LOW_LAYER_DEF.id, true);
+    this.layerManager.setLayerVisibility(FIX_LOW_LAYER_DEF.id, false);
 
     const baseLayerLabels = {};
 
