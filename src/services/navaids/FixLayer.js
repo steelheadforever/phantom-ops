@@ -17,6 +17,8 @@ export class FixLayer {
 
     this._abortController = null;
     this._debounceTimer = null;
+    /** @type {GeoJSON.Feature[] | null} Current viewport features, for proximity queries. */
+    this._features = null;
 
     map.on('zoomend', () => this._onZoomMove());
     map.on('moveend', () => this._onZoomMove());
@@ -32,6 +34,7 @@ export class FixLayer {
 
     if (zoom < MIN_ZOOM) {
       this._cancel();
+      this._features = null;
       this.group.clearLayers();
       return;
     }
@@ -68,6 +71,7 @@ export class FixLayer {
       const features = await fetchFixesInBounds(bounds, this.chartFilter, signal);
       if (signal.aborted) return;
 
+      this._features = features;
       this.group.clearLayers();
       for (const feature of features) {
         const [lon, lat] = feature.geometry.coordinates;

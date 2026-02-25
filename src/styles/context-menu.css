@@ -94,6 +94,44 @@
   letter-spacing: 0.04em;
 }
 
+/* ─── Nearby point rows ───────────────────────────────────── */
+
+.ccm-point-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+.ccm-point-row:hover {
+  background: rgba(43, 58, 171, 0.28);
+}
+
+.ccm-point-ident {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.05em;
+  min-width: 52px;
+  flex-shrink: 0;
+}
+
+.ccm-point-type {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.38);
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+
+.ccm-point-dist {
+  font-size: 9px;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
 /* ─── Altitude side-tooltip ───────────────────────────────── */
 
 .ccm-alt-tip {

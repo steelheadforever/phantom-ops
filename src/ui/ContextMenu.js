@@ -8,11 +8,13 @@
  * Suppressed while MeasureTool is active.
  */
 export class ContextMenu {
-  constructor({ map, coordinateService, airspaceLayers, measureTool }) {
+  constructor({ map, coordinateService, airspaceLayers, measureTool, pointLayers = [], layerManager = null }) {
     this._map = map;
     this._coordinateService = coordinateService;
     this._airspaceLayers = airspaceLayers; // Map<id, L.geoJSON> — live reference
     this._measureTool = measureTool;
+    this._pointLayers = pointLayers;       // [{ layerId, layer }]
+    this._layerManager = layerManager;
 
     this._el = null;
     this._tipEl = null;
@@ -128,6 +130,19 @@ export class ContextMenu {
       airSection.className = 'ccm-section';
       airspaceRows.forEach((r) => airSection.appendChild(r));
       this._el.appendChild(airSection);
+    }
+
+    // ── Nearby points ─────────────────────────────────────────────────────
+    const nearbyPoints = this._getNearbyPoints(lat, lng);
+    if (nearbyPoints.length) {
+      const divider = document.createElement('div');
+      divider.className = 'ccm-divider';
+      this._el.appendChild(divider);
+
+      const ptSection = document.createElement('div');
+      ptSection.className = 'ccm-section';
+      nearbyPoints.forEach((pt) => ptSection.appendChild(this._makePointRow(pt)));
+      this._el.appendChild(ptSection);
     }
 
     // ── Position + show ───────────────────────────────────────────────────
@@ -277,5 +292,111 @@ export class ContextMenu {
     if (lower !== null && upper !== null) return `${fmt(lower, lowerCode)} – ${fmt(upper, upperCode)}`;
     if (lower !== null) return `from ${fmt(lower, lowerCode)}`;
     return `to ${fmt(upper, upperCode)}`;
+  }
+
+  // ─── nearby points ───────────────────────────────────────────────────────
+
+  _getNearbyPoints(lat, lng) {
+    const RADIUS_M = 370.4; // 0.2 NM in metres
+    const results = [];
+
+    for (const { layerId, layer } of this._pointLayers) {
+      const entry = this._layerManager?.layers.get(layerId);
+      if (!entry?.visible) continue;
+
+      const features = layer._features;
+      if (!features) continue;
+
+      for (const f of features) {
+        const [fLon, fLat] = f.geometry.coordinates;
+        const distM = L.latLng(lat, lng).distanceTo([fLat, fLon]);
+        if (distM > RADIUS_M) continue;
+
+        const props = f.properties ?? {};
+        results.push({
+          ident:  props.IDENT || props.IDENT_TXT || '?',
+          type:   this._pointType(props),
+          lat:    fLat,
+          lon:    fLon,
+          distNm: distM / 1852,
+        });
+      }
+    }
+
+    results.sort((a, b) => a.distNm - b.distNm);
+    return results.slice(0, 8); // cap to keep the menu compact
+  }
+
+  _pointType(props) {
+    if (props.CLASS_TXT) {
+      const s = props.CLASS_TXT.toUpperCase();
+      if (s.includes('VORTAC')) return 'VORTAC';
+      if (s.includes('VOR'))    return 'VOR';
+      if (s.includes('TACAN'))  return 'TACAN';
+      if (s.includes('NDB'))    return 'NDB';
+      return 'NAVAID';
+    }
+    if (props.TYPE_CODE) {
+      return props.TYPE_CODE === 'RPT' ? 'RPT Fix' : 'RNAV Fix';
+    }
+    return 'Point';
+  }
+
+  _makePointRow(pt) {
+    const row = document.createElement('div');
+    row.className = 'ccm-point-row';
+
+    const identEl = document.createElement('span');
+    identEl.className = 'ccm-point-ident';
+    identEl.textContent = pt.ident;
+
+    const typeEl = document.createElement('span');
+    typeEl.className = 'ccm-point-type';
+    typeEl.textContent = pt.type;
+
+    const distEl = document.createElement('span');
+    distEl.className = 'ccm-point-dist';
+    distEl.textContent = `${pt.distNm.toFixed(2)} NM`;
+
+    const copiedEl = document.createElement('span');
+    copiedEl.className = 'ccm-copied';
+    copiedEl.textContent = 'Copied';
+    copiedEl.setAttribute('aria-hidden', 'true');
+
+    row.appendChild(identEl);
+    row.appendChild(typeEl);
+    row.appendChild(distEl);
+    row.appendChild(copiedEl);
+
+    // Hover: show point's coords in the current chart format via side tooltip
+    row.addEventListener('mouseenter', () => {
+      const fmt = this._coordinateService.getCurrentFormat();
+      const coord = this._coordinateService.formatCoordinate(pt.lat, pt.lon, fmt);
+      this._showTip(`${fmt}: ${coord}`, row);
+    });
+    row.addEventListener('mouseleave', () => this._hideTip());
+
+    // Click: copy point's coords in current format to clipboard
+    row.addEventListener('click', () => {
+      const fmt = this._coordinateService.getCurrentFormat();
+      const coord = this._coordinateService.formatCoordinate(pt.lat, pt.lon, fmt);
+      const text = `${fmt}: ${coord}`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      copiedEl.classList.add('ccm-copied--visible');
+      setTimeout(() => copiedEl.classList.remove('ccm-copied--visible'), 1300);
+    });
+
+    return row;
   }
 }

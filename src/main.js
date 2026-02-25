@@ -89,7 +89,18 @@ new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
 
 // ── Bottom chrome ──────────────────────────────────────────────
 const measureTool = new MeasureTool({ map, bottomBar });
-new ContextMenu({ map, coordinateService, airspaceLayers: mapCore.airspaceLayers, measureTool });
+new ContextMenu({
+  map,
+  coordinateService,
+  airspaceLayers: mapCore.airspaceLayers,
+  measureTool,
+  layerManager: mapCore.layerManager,
+  pointLayers: [
+    { layerId: 'navaids',        layer: mapCore.navaidLayer },
+    { layerId: 'ifr-fixes-high', layer: mapCore.fixHighLayer },
+    { layerId: 'ifr-fixes-low',  layer: mapCore.fixLowLayer },
+  ],
+});
 new BaseLayerMenu({ mapCore, bottomBar }).mount();
 const AIRSPACE_CATEGORIES = [
   {
