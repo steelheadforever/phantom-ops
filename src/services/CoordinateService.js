@@ -71,8 +71,16 @@ export class CoordinateService {
 
   formatCoordinate(lat, lng, format) {
     if (format === 'MGRS') {
-      // 10-digit MGRS precision (1m)
-      return this.mgrsLib.forward([lng, lat], 5);
+      const raw = this.mgrsLib.forward([lng, lat], 5);
+      // raw = "{zone}{band}{sq2}{easting5}{northing5}", e.g. "14RNT4059140402"
+      // Find where zone number ends (leading digits)
+      let z = 0;
+      while (z < raw.length && raw[z] >= '0' && raw[z] <= '9') z++;
+      const zone   = raw.slice(0, z);
+      const square = raw.slice(z + 1, z + 3); // skip band letter at index z
+      const easting  = raw.slice(z + 3, z + 8);
+      const northing = raw.slice(z + 8, z + 13);
+      return `${zone} ${square} ${easting} ${northing}`;
     }
 
     if (format === 'DMM') {
