@@ -45,7 +45,8 @@ export class MapCore {
     this.storage = storage;
     this.baseLayerById = new Map();
     this.sourceStatusByLayerId = new Map();
-    this.sourceDebugEl = null;
+    this._airspaceLoadStatus = new Map();
+    this._statusListeners = [];
 
     this.airspaceSource = airspaceSource ?? new ArcGISAirspaceSource({
       endpoint: airspaceEndpoint,
@@ -135,7 +136,6 @@ export class MapCore {
 
     this.baseLayers = baseLayerLabels;
 
-    this.#ensureSourceDebugIndicator();
     this.validateOperationalSources().catch((error) => {
       console.warn('Operational source validation failed:', error);
     });
@@ -146,35 +146,53 @@ export class MapCore {
   async loadAirspaceData() {
     if (!this.airspaceSourceService) return;
 
-    const featureCollection = await this.airspaceSourceService.loadAirspaceFeatureCollection();
+    try {
+      const featureCollection = await this.airspaceSourceService.loadAirspaceFeatureCollection();
 
-    // Distribute SUA features into per-type layers
-    for (const feature of featureCollection.features) {
-      const kind = mapAirspaceKind(feature.properties ?? {});
-      const layerId = this.#kindToLayerId(kind);
-      const layer = this.airspaceLayers.get(layerId);
-      if (layer) {
-        layer.addData(feature);
+      // Distribute SUA features into per-type layers
+      for (const feature of featureCollection.features) {
+        const kind = mapAirspaceKind(feature.properties ?? {});
+        const layerId = this.#kindToLayerId(kind);
+        const layer = this.airspaceLayers.get(layerId);
+        if (layer) {
+          layer.addData(feature);
+        }
       }
+
+      this._airspaceLoadStatus.set('sua', { label: 'SUA Airspace', ok: true });
+    } catch (err) {
+      this._airspaceLoadStatus.set('sua', { label: 'SUA Airspace', ok: false });
+      throw err;
+    } finally {
+      this._notifyStatusListeners();
     }
   }
 
   async loadClassAirspaceData() {
     if (!this.classAirspaceSource) return;
 
-    const { classB, classC, classD } = await this.classAirspaceSource.fetchAllClasses();
+    try {
+      const { classB, classC, classD } = await this.classAirspaceSource.fetchAllClasses();
 
-    const classLayerMap = {
-      'airspace-class-b': classB,
-      'airspace-class-c': classC,
-      'airspace-class-d': classD,
-    };
+      const classLayerMap = {
+        'airspace-class-b': classB,
+        'airspace-class-c': classC,
+        'airspace-class-d': classD,
+      };
 
-    for (const [layerId, fc] of Object.entries(classLayerMap)) {
-      const layer = this.airspaceLayers.get(layerId);
-      if (layer && fc.features.length > 0) {
-        layer.addData(fc);
+      for (const [layerId, fc] of Object.entries(classLayerMap)) {
+        const layer = this.airspaceLayers.get(layerId);
+        if (layer && fc.features.length > 0) {
+          layer.addData(fc);
+        }
       }
+
+      this._airspaceLoadStatus.set('class-bcd', { label: 'Class B/C/D', ok: true });
+    } catch (err) {
+      this._airspaceLoadStatus.set('class-bcd', { label: 'Class B/C/D', ok: false });
+      throw err;
+    } finally {
+      this._notifyStatusListeners();
     }
   }
 
@@ -201,13 +219,15 @@ export class MapCore {
       if (!entry) continue;
 
       const { definition, layer } = entry;
-      const { template } = await resolveHealthyTileEndpoint(definition.url, definition.fallbackUrls ?? []);
+      const { template, evidence } = await resolveHealthyTileEndpoint(definition.url, definition.fallbackUrls ?? []);
       const degraded = template !== definition.url;
+      const reachable = evidence.some((e) => e.ok);
 
       this.sourceStatusByLayerId.set(layerId, {
         configuredUrl: definition.url,
         activeUrl: template,
         degraded,
+        reachable,
       });
 
       if (degraded && typeof layer.setUrl === 'function') {
@@ -215,7 +235,7 @@ export class MapCore {
       }
     }
 
-    this.#updateSourceDebugIndicator();
+    this._notifyStatusListeners();
 
     const ifrLow = this.sourceStatusByLayerId.get('base-ifr-low');
     const ifrHigh = this.sourceStatusByLayerId.get('base-ifr-high');
@@ -231,22 +251,51 @@ export class MapCore {
     }
   }
 
-  getOperationalSourceStatus() {
-    const aviation = Object.fromEntries(
-      AVIATION_BASE_IDS
-        .map((id) => [id, this.sourceStatusByLayerId.get(id)])
-        .filter(([, value]) => Boolean(value)),
-    );
+  /** Register a callback invoked whenever source status changes. */
+  onStatusUpdate(cb) {
+    this._statusListeners.push(cb);
+  }
 
-    const ifrLow = aviation['base-ifr-low'];
-    const ifrHigh = aviation['base-ifr-high'];
-    const ifrDistinctActiveSources = Boolean(ifrLow && ifrHigh && ifrLow.activeUrl !== ifrHigh.activeUrl);
-
-    return {
-      aviation,
-      ifrDistinctActiveSources,
-      degraded: Object.values(aviation).some((entry) => entry?.degraded),
+  /**
+   * Returns { level: 'ok'|'lim'|'bad', degradedLines: string[] }
+   * ok  — all sources on primary, everything loaded
+   * lim — at least one source degraded (fallback) or failed
+   * bad — nothing is reachable at all
+   */
+  getSourceStatus() {
+    const LAYER_LABELS = {
+      'base-vfr-sectional': 'VFR Sectional',
+      'base-ifr-low': 'IFR Low',
+      'base-ifr-high': 'IFR High',
     };
+
+    const entries = [];
+
+    for (const id of AVIATION_BASE_IDS) {
+      const s = this.sourceStatusByLayerId.get(id);
+      if (!s) continue;
+      entries.push({
+        label: LAYER_LABELS[id] || id,
+        reachable: s.reachable !== false,
+        degraded: s.degraded,
+      });
+    }
+
+    for (const s of this._airspaceLoadStatus.values()) {
+      entries.push({ label: s.label, reachable: s.ok, degraded: !s.ok });
+    }
+
+    if (entries.length === 0) return { level: 'ok', degradedLines: [] };
+
+    const allUnreachable = entries.every((e) => !e.reachable);
+    const anyIssue = entries.some((e) => !e.reachable || e.degraded);
+    const level = allUnreachable ? 'bad' : anyIssue ? 'lim' : 'ok';
+
+    const degradedLines = entries
+      .filter((e) => !e.reachable || e.degraded)
+      .map((e) => `${e.label}: ${e.reachable ? 'fallback' : 'offline'}`);
+
+    return { level, degradedLines };
   }
 
   setAirspaceVisibility(visible) {
@@ -285,33 +334,8 @@ export class MapCore {
     persistBaseLayerId(this.storage, activeLayerId);
   }
 
-  #ensureSourceDebugIndicator() {
-    if (typeof document === 'undefined') return;
-
-    let el = document.getElementById('source-debug-indicator');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'source-debug-indicator';
-      el.className = 'source-debug-indicator';
-      document.body.appendChild(el);
-    }
-
-    this.sourceDebugEl = el;
-    this.#updateSourceDebugIndicator();
-  }
-
-  #updateSourceDebugIndicator() {
-    if (!this.sourceDebugEl) return;
-
-    const low = this.sourceStatusByLayerId.get('base-ifr-low');
-    const high = this.sourceStatusByLayerId.get('base-ifr-high');
-    const mode = low && high && low.activeUrl === high.activeUrl ? 'DEGRADED' : 'OK';
-
-    const summarize = (entry) => {
-      if (!entry) return 'n/a';
-      return entry.degraded ? 'fallback' : 'primary';
-    };
-
-    this.sourceDebugEl.textContent = `Sources ${mode} | VFR:${summarize(this.sourceStatusByLayerId.get('base-vfr-sectional'))} IFR-L:${summarize(low)} IFR-H:${summarize(high)}`;
+  _notifyStatusListeners() {
+    const status = this.getSourceStatus();
+    for (const cb of this._statusListeners) cb(status);
   }
 }

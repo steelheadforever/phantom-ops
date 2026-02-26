@@ -22,6 +22,7 @@ export class BottomBar {
     this.leftControlsEl = null;
     this.midControlsEl = null;
     this.controlsEl = null;
+    this._row2El = null;
   }
 
   mount(root = document.body) {
@@ -66,6 +67,7 @@ export class BottomBar {
     this.leftControlsEl = leftControls;
     this.midControlsEl = midControls;
     this.controlsEl = controls;
+    this._row2El = row2;
     return this;
   }
 
@@ -89,5 +91,10 @@ export class BottomBar {
 
   addControl(buttonEl) {
     this.controlsEl?.appendChild(buttonEl);
+  }
+
+  /** Append a trailing indicator (e.g. source status) to the right of the clock in row-2. */
+  addRow2Indicator(el) {
+    this._row2El?.appendChild(el);
   }
 }

@@ -89,6 +89,32 @@
   .bottom-bar__clock { display: none; }
 }
 
+/* Source status indicator — same visual weight as clock, desktop only */
+.bottom-bar__source-status {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: 6px;
+  cursor: default;
+  user-select: none;
+}
+
+.bottom-bar__source-status--lim {
+  color: var(--gold);
+}
+
+.bottom-bar__source-status--bad {
+  color: #e63946;
+}
+
+@media (pointer: coarse) {
+  .bottom-bar__source-status { display: none; }
+}
+
 /* ─── Control Buttons ─────────────────────────────────────── */
 
 .bar-btn {

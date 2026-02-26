@@ -157,6 +157,18 @@ const AIRSPACE_CATEGORIES = [
 new AirspaceMenu({ layerManager: mapCore.layerManager, categories: AIRSPACE_CATEGORIES, bottomBar }).mount();
 new BrightnessSlider({ layerManager: mapCore.layerManager, bottomBar }).mount();
 
+// ── Source status indicator ─────────────────────────────────────
+const sourceStatusEl = document.createElement('span');
+sourceStatusEl.className = 'bottom-bar__source-status';
+sourceStatusEl.textContent = 'SOURCES: OK';
+bottomBar.addRow2Indicator(sourceStatusEl);
+
+mapCore.onStatusUpdate(({ level, degradedLines }) => {
+  sourceStatusEl.className = `bottom-bar__source-status${level !== 'ok' ? ` bottom-bar__source-status--${level}` : ''}`;
+  sourceStatusEl.textContent = `SOURCES: ${level.toUpperCase()}`;
+  sourceStatusEl.title = degradedLines.length > 0 ? degradedLines.join('\n') : '';
+});
+
 // ── Map overlays ───────────────────────────────────────────────
 const overlayService = new OverlayService(document.body);
 overlayService.createCenterCrosshair();
@@ -171,7 +183,3 @@ mapCore.loadClassAirspaceData().catch((error) => {
   console.warn('Class B/C/D airspace failed to load:', error);
 });
 
-// Move source status indicator into sidebar footer (created sync by loadAirspaceData above)
-if (mapCore.sourceDebugEl) {
-  sideMenu.footerEl.appendChild(mapCore.sourceDebugEl);
-}
