@@ -49,8 +49,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-shrink: 1;
-  min-width: 80px;
+  flex-shrink: 0;
+  min-width: 22ch;
   transition: color 0.15s;
 }
 
@@ -92,13 +92,13 @@
 /* Source status indicator — same visual weight as clock, desktop only */
 .bottom-bar__source-status {
   font-family: 'B612 Mono', ui-monospace, monospace;
-  font-size: 13px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
   flex-shrink: 0;
-  margin-left: 6px;
+  padding: 0 6px;
   cursor: default;
   user-select: none;
 }

@@ -91,7 +91,7 @@ export class CoordinateService {
     const degrees = Math.floor(absolute);
     const minutes = (absolute - degrees) * 60;
 
-    return `${degrees}° ${minutes.toFixed(4)}' ${hemisphere}`;
+    return `${degrees}°${minutes.toFixed(4)}'${hemisphere}`;
   }
 
   toDms(decimal, isLatitude) {
@@ -105,7 +105,7 @@ export class CoordinateService {
     const minutes = Math.floor(minutesRaw);
     const seconds = (minutesRaw - minutes) * 60;
 
-    return `${degrees}° ${minutes}' ${seconds.toFixed(2)}\" ${hemisphere}`;
+    return `${degrees}°${minutes}'${seconds.toFixed(2)}"${hemisphere}`;
   }
 }
 
