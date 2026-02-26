@@ -27,15 +27,27 @@ export class CoordinateService {
   }
 
   attachToMap(map) {
-    map.on('mousemove', (event) => {
-      this.currentLatLng = event?.latlng ?? null;
-      this.publishCurrentCoordinate();
-    });
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      // Touch: show map center coordinate, updated live during pan
+      const updateCenter = () => {
+        this.currentLatLng = map.getCenter();
+        this.publishCurrentCoordinate();
+      };
+      map.on('move', updateCenter);
+      map.on('moveend', updateCenter);
+      updateCenter();
+    } else {
+      // Desktop: show coordinate under the mouse cursor
+      map.on('mousemove', (event) => {
+        this.currentLatLng = event?.latlng ?? null;
+        this.publishCurrentCoordinate();
+      });
 
-    map.on('mouseout', () => {
-      this.currentLatLng = null;
-      this.statusBar.setCoordinate('--');
-    });
+      map.on('mouseout', () => {
+        this.currentLatLng = null;
+        this.statusBar.setCoordinate('--');
+      });
+    }
 
     this.statusBar.onCoordinateClick(() => {
       this.cycleFormat();

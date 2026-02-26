@@ -54,16 +54,6 @@
   flex: 1;
 }
 
-.top-bar__utc {
-  font-family: 'B612 Mono', ui-monospace, monospace;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.7);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
 .top-bar__title {
   font-family: 'B612 Mono', ui-monospace, monospace;
   font-style: italic;
@@ -74,25 +64,64 @@
   white-space: nowrap;
 }
 
+/* ─── Touch-only buttons (i-btn, clock-btn) ────────────────── */
+
+.top-bar .top-bar__info-btn,
+.top-bar .top-bar__clock-btn {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .top-bar .top-bar__info-btn,
+  .top-bar .top-bar__clock-btn { display: flex; }
+}
+
+.top-bar__info-btn.active {
+  background: rgba(43, 58, 171, 0.35);
+  color: var(--gold);
+}
+
+/* ─── Clock overlay (tap clock-btn on touch) ───────────────── */
+
+.top-bar__clock-overlay {
+  position: fixed;
+  top: var(--top-bar-height);
+  right: 0;
+  background: var(--bg-bar);
+  border: 1px solid var(--blue-border);
+  border-top: none;
+  padding: 10px 18px;
+  font-family: 'B612 Mono', monospace;
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.1em;
+  z-index: 2001;
+  border-radius: 0 0 0 6px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
 /* ─── Side Menu ───────────────────────────────────────────── */
 
 .side-menu {
   position: fixed;
   top: var(--top-bar-height);
-  left: -280px;
+  right: -280px;
+  left: unset;
   width: 260px;
   bottom: 0;
   z-index: 1999;
   background: var(--bg-bar);
-  border-right: 1px solid var(--blue-border);
-  transition: left 0.2s ease;
+  border-left: 1px solid var(--blue-border);
+  border-right: none;
+  transition: right 0.2s ease;
   padding-top: 8px;
   display: flex;
   flex-direction: column;
 }
 
 .side-menu.open {
-  left: 0;
+  right: 0;
 }
 
 .side-menu__btn {
@@ -148,4 +177,26 @@
   padding: 10px 14px;
   border-top: 1px solid var(--blue-border);
   min-height: 0;
+}
+
+/* ─── Mobile: side menu as bottom sheet ────────────────────── */
+
+@media (max-width: 640px) {
+  .side-menu {
+    right: 0;
+    top: unset;
+    bottom: -65vh;
+    width: 100%;
+    height: 65%;
+    border-left: none;
+    border-top: 1px solid var(--blue-border);
+    border-radius: 12px 12px 0 0;
+    transition: bottom 0.25s ease;
+    overflow-y: auto;
+  }
+
+  .side-menu.open {
+    bottom: 0;
+    right: 0;
+  }
 }

@@ -50,7 +50,7 @@ export class MeasureTool {
     btn.title = 'Measure distance';
     btn.innerHTML = RULER_SVG;
     btn.addEventListener('click', () => this._toggle());
-    bottomBar.addMidControl(btn);
+    bottomBar.addControl(btn);
     this._btn = btn;
   }
 

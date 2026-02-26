@@ -31,6 +31,12 @@ export class ContextMenu {
     });
   }
 
+  // ─── public ─────────────────────────────────────────────────────────────
+
+  show(latlng, nativeEvent) {
+    this._show(latlng, nativeEvent);
+  }
+
   // ─── private ────────────────────────────────────────────────────────────
 
   _mount() {

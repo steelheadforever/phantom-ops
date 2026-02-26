@@ -27,6 +27,10 @@ import { StudyPanel } from './ui/study/StudyPanel.js';
 import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
 import { OpsLimitsPanel } from './ui/study/OpsLimitsPanel.js';
 
+// ── Touch detection ────────────────────────────────────────────
+const isTouch = navigator.maxTouchPoints > 0;
+if (isTouch) document.body.classList.add('is-touch');
+
 const mapCore = new MapCore();
 const map = mapCore.init();
 
@@ -91,13 +95,21 @@ studyPanel._opsLimitsPanel = opsLimitsPanel;
 boldfacePanel._sideMenu = sideMenu;
 opsLimitsPanel._sideMenu = sideMenu;
 
-new TopBar({ onHamburger: () => sideMenu.toggle() }).mount(document.body);
+let contextMenu;
+new TopBar({
+  onHamburger: () => sideMenu.toggle(),
+  onInfoMode: () => {
+    map.once('click', (e) => {
+      contextMenu?.show(e.latlng, e.originalEvent);
+    });
+  },
+}).mount(document.body);
 
 // ── Bottom chrome ──────────────────────────────────────────────
 new ScratchPad({ bottomBar });
 new PointSearchTool({ map, bottomBar });
 const measureTool = new MeasureTool({ map, bottomBar });
-new ContextMenu({
+contextMenu = new ContextMenu({
   map,
   coordinateService,
   airspaceLayers: mapCore.airspaceLayers,

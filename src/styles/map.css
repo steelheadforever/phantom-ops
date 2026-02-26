@@ -24,6 +24,10 @@ body {
   background: #000;
 }
 
+@media (max-width: 640px) {
+  :root { --bottom-bar-height: 78px; }
+}
+
 /* ─── Leaflet zoom control (top-right) ────────────────────── */
 
 .leaflet-control-zoom {

@@ -376,6 +376,24 @@
   background: rgba(43, 58, 171, 0.8);
 }
 
+/* ─── Mobile: shape popups as bottom sheets ────────────────── */
+
+@media (max-width: 640px) {
+  .shape-popup,
+  .polygon-popup,
+  .line-popup,
+  .point-popup {
+    top: unset;
+    right: 0;
+    left: 0;
+    bottom: var(--bottom-bar-height);
+    border-radius: 12px 12px 0 0;
+    max-height: 55vh;
+    overflow-y: auto;
+    width: 100%;
+  }
+}
+
 /* ─── Radius label (divIcon on map) ────────────────────────── */
 
 .radius-label {
