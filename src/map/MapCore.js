@@ -28,6 +28,8 @@ export const AIRSPACE_LAYER_DEFS = [
   { id: 'airspace-restricted', label: 'Restricted Areas', kind: 'restricted' },
 ];
 
+export const SIMULATED_LAYER_DEF = Object.freeze({ id: 'airspace-simulated', label: 'Simulated Airspace' });
+
 export class MapCore {
   constructor({
     airspaceEndpoint,
@@ -134,6 +136,41 @@ export class MapCore {
       this.layerManager.setLayerVisibility(def.id, true);
     }
 
+    // Simulated airspace — per-feature styling from GeoJSON properties
+    const simLayer = L.geoJSON(null, {
+      style: (feature) => {
+        const p = feature.properties || {};
+        return {
+          color: p.color || '#a0a0a0',
+          fillColor: p.color || '#a0a0a0',
+          fillOpacity: typeof p.fillOpacity === 'number' ? p.fillOpacity : 0.26,
+          opacity: 0.95,
+          weight: p.weight || 1.8,
+        };
+      },
+      pointToLayer: (feature, latlng) => {
+        const p = feature.properties || {};
+        const marker = L.circleMarker(latlng, {
+          radius: 5,
+          color: p.color || '#4da6ff',
+          fillColor: p.color || '#4da6ff',
+          fillOpacity: 0.9,
+          weight: 1.5,
+          pane: PANE_IDS.AIRSPACE_SIMULATED,
+        });
+        if (p.showLabel && p.name) {
+          marker.bindTooltip(p.name, { permanent: true, direction: 'right', className: 'cgrs-label' });
+        }
+        return marker;
+      },
+    });
+    const simLayerOptions = this.layerManager.registerLayer(SIMULATED_LAYER_DEF.id, simLayer, 'airspace-simulated');
+    if (typeof simLayer.options === 'object') {
+      Object.assign(simLayer.options, simLayerOptions);
+    }
+    this.airspaceLayers.set(SIMULATED_LAYER_DEF.id, simLayer);
+    this.layerManager.setLayerVisibility(SIMULATED_LAYER_DEF.id, true);
+
     this.baseLayers = baseLayerLabels;
 
     this.validateOperationalSources().catch((error) => {
@@ -190,6 +227,24 @@ export class MapCore {
       this._airspaceLoadStatus.set('class-bcd', { label: 'Class B/C/D', ok: true });
     } catch (err) {
       this._airspaceLoadStatus.set('class-bcd', { label: 'Class B/C/D', ok: false });
+      throw err;
+    } finally {
+      this._notifyStatusListeners();
+    }
+  }
+
+  async loadSimulatedAirspaceData() {
+    try {
+      const response = await fetch('/data/airspace/simulated/simulated.geojson');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const fc = await response.json();
+      const layer = this.airspaceLayers.get(SIMULATED_LAYER_DEF.id);
+      if (layer && fc.features?.length > 0) {
+        layer.addData(fc);
+      }
+      this._airspaceLoadStatus.set('simulated', { label: 'Simulated', ok: true });
+    } catch (err) {
+      this._airspaceLoadStatus.set('simulated', { label: 'Simulated', ok: false });
       throw err;
     } finally {
       this._notifyStatusListeners();

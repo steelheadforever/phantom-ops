@@ -163,7 +163,9 @@ const AIRSPACE_CATEGORIES = [
   },
   {
     label: 'Simulated',
-    layers: [],
+    layers: [
+      { id: 'airspace-simulated', label: 'Simulated Airspace' },
+    ],
   },
 ];
 new AirspaceMenu({ layerManager: mapCore.layerManager, categories: AIRSPACE_CATEGORIES, bottomBar, mapLegend }).mount();
@@ -193,5 +195,9 @@ mapCore.loadAirspaceData().catch((error) => {
 
 mapCore.loadClassAirspaceData().catch((error) => {
   console.warn('Class B/C/D airspace failed to load:', error);
+});
+
+mapCore.loadSimulatedAirspaceData().catch((error) => {
+  console.warn('Simulated airspace failed to load:', error);
 });
 
