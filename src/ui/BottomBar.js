@@ -44,9 +44,9 @@ export class BottomBar {
     const midControls = document.createElement('div');
     midControls.className = 'bottom-bar__mid-controls';
 
-    row1.appendChild(coord);
     row1.appendChild(leftControls);
     row1.appendChild(midControls);
+    row1.appendChild(coord);
 
     // Row 2: control buttons + desktop clock
     const row2 = document.createElement('div');

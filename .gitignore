@@ -4,3 +4,4 @@ tmp/
 data/airspace/*.geojson
 .wrangler/
 .claude/
+sector-clear.html

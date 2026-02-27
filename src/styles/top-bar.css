@@ -106,9 +106,9 @@
 .side-menu {
   position: fixed;
   top: var(--top-bar-height);
-  right: -280px;
+  right: -320px;
   left: unset;
-  width: 260px;
+  width: 300px;
   bottom: 0;
   z-index: 1999;
   background: var(--bg-bar);
