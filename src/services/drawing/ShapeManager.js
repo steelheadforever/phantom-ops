@@ -250,6 +250,23 @@ export class ShapeManager {
     }
   }
 
+  /** Remove all shapes from the map and clear localStorage. */
+  clearAll() {
+    for (const [id, layer] of this._layers) {
+      layer.remove();
+      this._removeLabel(id);
+      this._removePointLabel(id);
+    }
+    this._layers.clear();
+    this.shapes = [];
+    try {
+      globalThis?.localStorage?.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    this._notify();
+  }
+
   /** Register a callback invoked after every shape mutation. */
   onChange(cb) {
     this._listeners.push(cb);

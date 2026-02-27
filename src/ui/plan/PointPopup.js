@@ -34,11 +34,14 @@ export class PointPopup {
     // Field refs
     this._titleEl = null;
     this._nameInput = null;
+    this._descInput = null;
     this._labelEyeBtn = null;
     this._locationInput = null;
     this._symbolSelect = null;
     this._transparencyInput = null;
     this._transparencyLabel = null;
+    this._altEnabledCb = null;
+    this._altInput = null;
   }
 
   mount(root = document.body) {
@@ -51,11 +54,14 @@ export class PointPopup {
 
     this._titleEl = el.querySelector('.shape-popup__title');
     this._nameInput = el.querySelector('.sp-name');
+    this._descInput = el.querySelector('.sp-description');
     this._labelEyeBtn = el.querySelector('.lp-label-eye');
     this._locationInput = el.querySelector('.sp-location');
     this._symbolSelect = el.querySelector('.lp-dash-select');
     this._transparencyInput = el.querySelector('.sp-transparency');
     this._transparencyLabel = el.querySelector('.sp-transparency-label');
+    this._altEnabledCb = el.querySelector('.sp-alt-enabled');
+    this._altInput = el.querySelector('.sp-alt');
 
     this._bindStaticEvents();
 
@@ -77,6 +83,7 @@ export class PointPopup {
 
     this._titleEl.textContent = 'New Point';
     this._nameInput.value = '';
+    this._descInput.value = '';
     this._locationInput.value = '— click map —';
     this._locationInput.disabled = true;
     this._symbolSelect.value = 'waypoint';
@@ -85,6 +92,9 @@ export class PointPopup {
     const pct = Math.round((1 - (this._shapeManager.lastOpacity ?? 0.26)) * 100);
     this._transparencyInput.value = pct;
     this._transparencyLabel.textContent = `${pct}% transparent`;
+    this._altEnabledCb.checked = false;
+    this._altInput.value = '';
+    this._syncAltDisabled();
     this._el.style.display = 'block';
   }
 
@@ -103,6 +113,7 @@ export class PointPopup {
 
     this._titleEl.textContent = isNew ? 'New Point' : rec.name;
     this._nameInput.value = rec.name;
+    this._descInput.value = rec.description ?? '';
     this._locationInput.value = this._fmt(rec.lat, rec.lng);
     this._locationInput.disabled = false;
     this._symbolSelect.value = rec.symbol ?? 'waypoint';
@@ -112,6 +123,11 @@ export class PointPopup {
     const pct = Math.round((1 - rec.opacity) * 100);
     this._transparencyInput.value = pct;
     this._transparencyLabel.textContent = `${pct}% transparent`;
+
+    this._altEnabledCb.checked = rec.altEnabled ?? false;
+    this._altInput.value = rec.alt ?? '';
+    this._syncAltDisabled();
+
     this._el.style.display = 'block';
   }
 
@@ -136,10 +152,13 @@ export class PointPopup {
   getPendingConfig() {
     const pct = parseInt(this._transparencyInput?.value ?? '74', 10);
     return {
-      name:    this._nameInput?.value.trim() || null,
-      symbol:  this._symbolSelect?.value ?? 'waypoint',
-      color:   this._selectedColor,
-      opacity: (100 - pct) / 100,
+      name:        this._nameInput?.value.trim() || null,
+      description: this._descInput?.value.trim() || '',
+      symbol:      this._symbolSelect?.value ?? 'waypoint',
+      color:       this._selectedColor,
+      opacity:     (100 - pct) / 100,
+      altEnabled:  this._altEnabledCb?.checked ?? false,
+      alt:         this._altInput?.value !== '' ? parseFloat(this._altInput.value) : null,
     };
   }
 
@@ -169,6 +188,11 @@ export class PointPopup {
       </div>
 
       <div class="shape-popup__field">
+        <label>Description</label>
+        <textarea class="sp-description sp-input" rows="2" maxlength="200" autocomplete="off"></textarea>
+      </div>
+
+      <div class="shape-popup__field">
         <label>Location</label>
         <input class="sp-location sp-input" type="text" autocomplete="off" />
       </div>
@@ -191,6 +215,16 @@ export class PointPopup {
         </div>
       </div>
 
+      <div class="shape-popup__field">
+        <label class="sp-alt-header">
+          <input type="checkbox" class="sp-alt-enabled" />
+          Altitude (ft MSL)
+        </label>
+        <div class="sp-alt-fields sp-alt-fields--disabled">
+          <input class="sp-alt sp-input" type="number" min="0" step="100" placeholder="e.g. 10000" disabled />
+        </div>
+      </div>
+
       <div class="shape-popup__actions">
         <button class="sp-done sp-btn sp-btn--primary">Done</button>
         <button class="sp-cancel sp-btn">Cancel</button>
@@ -204,6 +238,25 @@ export class PointPopup {
       if (!this._currentId) return;
       const name = this._nameInput.value.trim() || `Point ${this._currentId}`;
       this._shapeManager.updateShape(this._currentId, { name });
+    });
+
+    // Description
+    this._descInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      this._shapeManager.updateShape(this._currentId, { description: this._descInput.value.trim() });
+    });
+
+    // Altitude
+    this._altEnabledCb.addEventListener('change', () => {
+      this._syncAltDisabled();
+      if (!this._currentId) return;
+      this._shapeManager.updateShape(this._currentId, { altEnabled: this._altEnabledCb.checked });
+    });
+
+    this._altInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      const val = this._altInput.value !== '' ? parseFloat(this._altInput.value) : null;
+      this._shapeManager.updateShape(this._currentId, { alt: val });
     });
 
     // Location — validate on blur
@@ -275,6 +328,14 @@ export class PointPopup {
       }
       this.close();
     });
+  }
+
+  _syncAltDisabled() {
+    const enabled = this._altEnabledCb?.checked ?? false;
+    const fields = this._el?.querySelector('.sp-alt-fields');
+    if (!fields) return;
+    fields.classList.toggle('sp-alt-fields--disabled', !enabled);
+    this._altInput.disabled = !enabled;
   }
 
   _selectColor(hex) {

@@ -12,10 +12,11 @@ const CHEVRON_SVG = `<svg class="am-chevron" width="10" height="10" viewBox="0 0
 </svg>`;
 
 export class AirspaceMenu {
-  constructor({ layerManager, categories, bottomBar }) {
+  constructor({ layerManager, categories, bottomBar, mapLegend = null }) {
     this.layerManager = layerManager;
     this.categories = categories;
     this.bottomBar = bottomBar;
+    this.mapLegend = mapLegend;
     this.btn = null;
     this.popup = null;
     /** @type {Map<string, HTMLElement>} category label → body element */
@@ -61,6 +62,23 @@ export class AirspaceMenu {
       popup.appendChild(header);
       popup.appendChild(body);
     });
+
+    // Legend checkbox — always at the bottom
+    const divider = document.createElement('div');
+    divider.className = 'popup-menu__divider';
+    popup.appendChild(divider);
+
+    const legendItem = document.createElement('label');
+    legendItem.className = 'popup-menu__item';
+    const legendCb = document.createElement('input');
+    legendCb.type = 'checkbox';
+    legendCb.checked = false;
+    legendCb.addEventListener('change', () => {
+      this.mapLegend?.setVisible(legendCb.checked);
+    });
+    legendItem.appendChild(legendCb);
+    legendItem.appendChild(document.createTextNode('Legend'));
+    popup.appendChild(legendItem);
 
     btn.addEventListener('click', (e) => {
       e.stopPropagation();

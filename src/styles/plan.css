@@ -376,6 +376,113 @@
   background: rgba(43, 58, 171, 0.8);
 }
 
+/* Description textarea */
+.sp-description {
+  resize: vertical;
+  min-height: 42px;
+  max-height: 80px;
+  line-height: 1.5;
+}
+
+/* Altitude section */
+.sp-alt-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sp-alt-header input[type="checkbox"] {
+  accent-color: var(--gold);
+  cursor: pointer;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+}
+
+.sp-alt-fields {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.sp-alt-fields .sp-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-alt-sep {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.sp-alt-fields--disabled .sp-input {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Map legend overlay */
+.map-legend {
+  position: fixed;
+  bottom: calc(var(--bottom-bar-height) + 8px);
+  left: 10px;
+  z-index: 1100;
+  background: rgba(14, 22, 52, 0.95);
+  border: 1px solid var(--blue-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  min-width: 160px;
+  pointer-events: none;
+}
+
+.map-legend__section-title {
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  font-size: 9px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  margin-top: 8px;
+}
+
+.map-legend__section-title:first-child {
+  margin-top: 0;
+}
+
+.map-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.05em;
+}
+
+.map-legend__swatch {
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.map-legend__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
 /* ─── Mobile: shape popups as bottom sheets ────────────────── */
 
 @media (max-width: 640px) {

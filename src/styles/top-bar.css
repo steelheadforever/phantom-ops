@@ -164,6 +164,15 @@
   display: block;
 }
 
+/* Root view — flex column to push reset btn to bottom */
+.side-menu__root-view {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* Content area for pushed views (plan panels etc.) */
 .side-menu__content {
   flex: 1;
@@ -172,11 +181,109 @@
   flex-direction: column;
 }
 
-/* Footer — source status indicator */
+/* Footer — reset data button */
 .side-menu__footer {
-  padding: 10px 14px;
+  padding: 8px 14px;
   border-top: 1px solid var(--blue-border);
   min-height: 0;
+}
+
+.side-menu__btn--enabled {
+  cursor: pointer;
+}
+
+.side-menu__spacer {
+  flex: 1;
+}
+
+.side-menu__reset-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 18px;
+  background: none;
+  border: none;
+  color: rgba(255, 80, 80, 0.55);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.side-menu__reset-btn:hover {
+  background: rgba(200, 30, 30, 0.15);
+  color: rgba(255, 100, 100, 0.9);
+}
+
+/* Confirm overlay inside side menu root view */
+.side-menu__confirm {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 16, 40, 0.97);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 10;
+  padding: 24px;
+  border-radius: inherit;
+}
+
+.side-menu__confirm-msg {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+
+.side-menu__confirm-msg strong {
+  display: block;
+  color: rgba(255, 100, 100, 0.9);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.side-menu__confirm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.side-menu__confirm-yes,
+.side-menu__confirm-no {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 3px;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.side-menu__confirm-yes {
+  background: rgba(180, 30, 30, 0.6);
+  border: 1px solid rgba(255, 80, 80, 0.4);
+  color: rgba(255, 200, 200, 0.9);
+}
+
+.side-menu__confirm-yes:hover {
+  background: rgba(200, 40, 40, 0.8);
+}
+
+.side-menu__confirm-no {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.side-menu__confirm-no:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ─── Mobile: side menu as bottom sheet ────────────────────── */
@@ -185,9 +292,9 @@
   .side-menu {
     right: 0;
     top: unset;
-    bottom: -65vh;
+    bottom: -33vh;
     width: 100%;
-    height: 65%;
+    height: 33vh;
     border-left: none;
     border-top: 1px solid var(--blue-border);
     border-radius: 12px 12px 0 0;
@@ -196,7 +303,7 @@
   }
 
   .side-menu.open {
-    bottom: 0;
+    bottom: var(--bottom-bar-height);
     right: 0;
   }
 }

@@ -44,12 +44,15 @@ export class LinePopup {
     // Field refs
     this._titleEl = null;
     this._nameInput = null;
+    this._descInput = null;
     this._labelEyeBtn = null;
     this._transparencyInput = null;
     this._transparencyLabel = null;
     this._dashSelect = null;
     this._coordTbody = null;
     this._placeBtn = null;
+    this._altEnabledCb = null;
+    this._altInput = null;
   }
 
   mount(root = document.body) {
@@ -62,12 +65,15 @@ export class LinePopup {
 
     this._titleEl = el.querySelector('.shape-popup__title');
     this._nameInput = el.querySelector('.sp-name');
+    this._descInput = el.querySelector('.sp-description');
     this._labelEyeBtn = el.querySelector('.lp-label-eye');
     this._transparencyInput = el.querySelector('.sp-transparency');
     this._transparencyLabel = el.querySelector('.sp-transparency-label');
     this._dashSelect = el.querySelector('.lp-dash-select');
     this._coordTbody = el.querySelector('.lp-coord-tbody');
     this._placeBtn = el.querySelector('.lp-place-btn');
+    this._altEnabledCb = el.querySelector('.sp-alt-enabled');
+    this._altInput = el.querySelector('.sp-alt');
 
     this._bindStaticEvents();
 
@@ -90,6 +96,7 @@ export class LinePopup {
 
     this._titleEl.textContent = 'New Line';
     this._nameInput.value = '';
+    this._descInput.value = '';
     this._updateLabelEye(false);
     this._selectColor('#4da6ff');
     this._dashSelect.value = 'solid';
@@ -97,6 +104,9 @@ export class LinePopup {
     this._transparencyInput.value = 0;
     this._transparencyLabel.textContent = '0% transparent';
     this._coordTbody.innerHTML = '<tr><td colspan="3" class="pp-pre-label">— click map to place points —</td></tr>';
+    this._altEnabledCb.checked = false;
+    this._altInput.value = '';
+    this._syncAltDisabled();
     this._updatePlaceBtn();
     this._el.style.display = 'block';
   }
@@ -126,10 +136,13 @@ export class LinePopup {
   getPendingConfig() {
     const pct = parseInt(this._transparencyInput?.value ?? '0', 10);
     return {
-      name:    this._nameInput?.value.trim() || null,
-      color:   this._selectedColor,
-      opacity: (100 - pct) / 100,
-      dash:    this._dashSelect?.value ?? 'solid',
+      name:        this._nameInput?.value.trim() || null,
+      description: this._descInput?.value.trim() || '',
+      color:       this._selectedColor,
+      opacity:     (100 - pct) / 100,
+      dash:        this._dashSelect?.value ?? 'solid',
+      altEnabled:  this._altEnabledCb?.checked ?? false,
+      alt:         this._altInput?.value !== '' ? parseFloat(this._altInput.value) : null,
     };
   }
 
@@ -150,6 +163,7 @@ export class LinePopup {
 
     this._titleEl.textContent = isNew ? 'New Line' : rec.name;
     this._nameInput.value = rec.name;
+    this._descInput.value = rec.description ?? '';
     this._updateLabelEye(rec.showLabel ?? false);
 
     const pct = Math.round((1 - rec.opacity) * 100);
@@ -158,6 +172,10 @@ export class LinePopup {
 
     this._selectColor(rec.color);
     this._dashSelect.value = rec.dash ?? 'solid';
+
+    this._altEnabledCb.checked = rec.altEnabled ?? false;
+    this._altInput.value = rec.alt ?? '';
+    this._syncAltDisabled();
 
     this._refreshTable();
     this._updatePlaceBtn();
@@ -216,6 +234,11 @@ export class LinePopup {
       </div>
 
       <div class="shape-popup__field">
+        <label>Description</label>
+        <textarea class="sp-description sp-input" rows="2" maxlength="200" autocomplete="off"></textarea>
+      </div>
+
+      <div class="shape-popup__field">
         <label>Color</label>
         <div class="color-swatches">${swatchHtml}</div>
       </div>
@@ -231,6 +254,16 @@ export class LinePopup {
       <div class="shape-popup__field">
         <label>Dash</label>
         <select class="lp-dash-select sp-input">${dashHtml}</select>
+      </div>
+
+      <div class="shape-popup__field">
+        <label class="sp-alt-header">
+          <input type="checkbox" class="sp-alt-enabled" />
+          Altitude (ft MSL)
+        </label>
+        <div class="sp-alt-fields sp-alt-fields--disabled">
+          <input class="sp-alt sp-input" type="number" min="0" step="100" placeholder="e.g. 10000" disabled />
+        </div>
       </div>
 
       <div class="shape-popup__field lp-points-field">
@@ -259,6 +292,23 @@ export class LinePopup {
       const name = this._nameInput.value.trim() || `Line ${this._currentId}`;
       this._shapeManager.updateShape(this._currentId, { name });
       if (!this._isNew) this._titleEl.textContent = name;
+    });
+
+    this._descInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      this._shapeManager.updateShape(this._currentId, { description: this._descInput.value.trim() });
+    });
+
+    this._altEnabledCb.addEventListener('change', () => {
+      this._syncAltDisabled();
+      if (!this._currentId) return;
+      this._shapeManager.updateShape(this._currentId, { altEnabled: this._altEnabledCb.checked });
+    });
+
+    this._altInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      const val = this._altInput.value !== '' ? parseFloat(this._altInput.value) : null;
+      this._shapeManager.updateShape(this._currentId, { alt: val });
     });
 
     // Label eyeball toggle
@@ -442,6 +492,14 @@ export class LinePopup {
   _destroyMarkers() {
     for (const m of this._pointMarkers) m.remove();
     this._pointMarkers = [];
+  }
+
+  _syncAltDisabled() {
+    const enabled = this._altEnabledCb?.checked ?? false;
+    const fields = this._el?.querySelector('.sp-alt-fields');
+    if (!fields) return;
+    fields.classList.toggle('sp-alt-fields--disabled', !enabled);
+    this._altInput.disabled = !enabled;
   }
 
   _updatePlaceBtn() {

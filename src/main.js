@@ -26,6 +26,8 @@ import { PlanPanel } from './ui/plan/PlanPanel.js';
 import { StudyPanel } from './ui/study/StudyPanel.js';
 import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
 import { OpsLimitsPanel } from './ui/study/OpsLimitsPanel.js';
+import { ReadmePanel } from './ui/ReadmePanel.js';
+import { MapLegend } from './ui/MapLegend.js';
 
 // ── Touch detection ────────────────────────────────────────────
 const isTouch = navigator.maxTouchPoints > 0;
@@ -84,8 +86,17 @@ const studyPanel = new StudyPanel();
 const boldfacePanel = new BoldfacePanel();
 const opsLimitsPanel = new OpsLimitsPanel();
 
+// ── README + Legend ────────────────────────────────────────────
+const readmePanel = new ReadmePanel().mount();
+const mapLegend = new MapLegend().mount(document.body);
+
 // ── Top chrome ─────────────────────────────────────────────────
-const sideMenu = new SideMenu({ planPanel, studyPanel }).mount(document.body);
+const sideMenu = new SideMenu({
+  planPanel,
+  studyPanel,
+  readmePanel,
+  onResetData: () => shapeManager.clearAll(),
+}).mount(document.body);
 
 drawShapesPanel._sideMenu = sideMenu;
 planPanel._sideMenu = sideMenu;
@@ -94,6 +105,7 @@ studyPanel._boldfacePanel = boldfacePanel;
 studyPanel._opsLimitsPanel = opsLimitsPanel;
 boldfacePanel._sideMenu = sideMenu;
 opsLimitsPanel._sideMenu = sideMenu;
+readmePanel._sideMenu = sideMenu;
 
 let contextMenu;
 new TopBar({
@@ -154,7 +166,7 @@ const AIRSPACE_CATEGORIES = [
     layers: [],
   },
 ];
-new AirspaceMenu({ layerManager: mapCore.layerManager, categories: AIRSPACE_CATEGORIES, bottomBar }).mount();
+new AirspaceMenu({ layerManager: mapCore.layerManager, categories: AIRSPACE_CATEGORIES, bottomBar, mapLegend }).mount();
 new BrightnessSlider({ layerManager: mapCore.layerManager, bottomBar }).mount();
 
 // ── Source status indicator ─────────────────────────────────────

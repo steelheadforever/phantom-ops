@@ -1,7 +1,9 @@
 export class SideMenu {
-  constructor({ planPanel, studyPanel } = {}) {
+  constructor({ planPanel, studyPanel, readmePanel, onResetData } = {}) {
     this._planPanel = planPanel;
     this._studyPanel = studyPanel;
+    this._readmePanel = readmePanel;
+    this._onResetData = onResetData;
     this.el = null;
     this.backdrop = null;
     this._isOpen = false;
@@ -46,8 +48,31 @@ export class SideMenu {
       }
     });
 
+    // README button — enabled
+    const readmeBtn = document.createElement('button');
+    readmeBtn.className = 'side-menu__btn side-menu__btn--enabled';
+    readmeBtn.textContent = 'README';
+    readmeBtn.addEventListener('click', () => {
+      if (this._readmePanel) {
+        this.pushView('readme', this._readmePanel.el);
+      }
+    });
+
+    // Spacer — pushes reset button to the bottom
+    const spacer = document.createElement('div');
+    spacer.className = 'side-menu__spacer';
+
+    // RESET DATA button — at the bottom
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'side-menu__reset-btn';
+    resetBtn.textContent = 'RESET DATA';
+    resetBtn.addEventListener('click', () => this._showConfirm(rootView));
+
     rootView.appendChild(planBtn);
     rootView.appendChild(studyBtn);
+    rootView.appendChild(readmeBtn);
+    rootView.appendChild(spacer);
+    rootView.appendChild(resetBtn);
 
     // Content area for pushed views
     const contentEl = document.createElement('div');
@@ -107,6 +132,34 @@ export class SideMenu {
   }
 
   // ─── private ────────────────────────────────────────────────────────────
+
+  _showConfirm(rootView) {
+    if (rootView.querySelector('.side-menu__confirm')) return; // already shown
+
+    const overlay = document.createElement('div');
+    overlay.className = 'side-menu__confirm';
+    overlay.innerHTML = `
+      <div class="side-menu__confirm-msg">
+        <strong>RESET DATA</strong>
+        This will permanently delete all<br>user-drawn shapes. Continue?
+      </div>
+      <div class="side-menu__confirm-actions">
+        <button class="side-menu__confirm-yes">YES — DELETE</button>
+        <button class="side-menu__confirm-no">NO — CANCEL</button>
+      </div>
+    `;
+
+    overlay.querySelector('.side-menu__confirm-yes').addEventListener('click', () => {
+      this._onResetData?.();
+      overlay.remove();
+    });
+
+    overlay.querySelector('.side-menu__confirm-no').addEventListener('click', () => {
+      overlay.remove();
+    });
+
+    rootView.appendChild(overlay);
+  }
 
   _renderCurrentView() {
     if (!this._contentEl || !this._rootView) return;

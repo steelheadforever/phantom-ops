@@ -39,10 +39,14 @@ export class ShapePopup {
 
     this._titleEl = null;
     this._nameInput = null;
+    this._descInput = null;
     this._locationInput = null;
     this._radiusInput = null;
     this._transparencyInput = null;
     this._transparencyLabel = null;
+    this._altEnabledCb = null;
+    this._altFloorInput = null;
+    this._altCeilingInput = null;
   }
 
   mount(root = document.body) {
@@ -55,10 +59,14 @@ export class ShapePopup {
 
     this._titleEl = el.querySelector('.shape-popup__title');
     this._nameInput = el.querySelector('.sp-name');
+    this._descInput = el.querySelector('.sp-description');
     this._locationInput = el.querySelector('.sp-location');
     this._radiusInput = el.querySelector('.sp-radius');
     this._transparencyInput = el.querySelector('.sp-transparency');
     this._transparencyLabel = el.querySelector('.sp-transparency-label');
+    this._altEnabledCb = el.querySelector('.sp-alt-enabled');
+    this._altFloorInput = el.querySelector('.sp-alt-floor');
+    this._altCeilingInput = el.querySelector('.sp-alt-ceiling');
 
     this._bindEvents();
 
@@ -81,6 +89,7 @@ export class ShapePopup {
 
     this._titleEl.textContent = 'New Circle';
     this._nameInput.value = '';
+    this._descInput.value = '';
     this._locationInput.value = '— place center —';
     this._locationInput.disabled = true;
     this._radiusInput.value = '';
@@ -89,6 +98,10 @@ export class ShapePopup {
     const pct = Math.round((1 - (this._shapeManager.lastOpacity ?? 0.26)) * 100);
     this._transparencyInput.value = pct;
     this._transparencyLabel.textContent = `${pct}% transparent`;
+    this._altEnabledCb.checked = false;
+    this._altFloorInput.value = '';
+    this._altCeilingInput.value = '';
+    this._syncAltDisabled();
     this._el.style.display = 'block';
   }
 
@@ -124,6 +137,7 @@ export class ShapePopup {
 
     this._titleEl.textContent = isNew ? 'New Circle' : rec.name;
     this._nameInput.value = rec.name;
+    this._descInput.value = rec.description ?? '';
     this._locationInput.value = this._formatCenter(rec.centerLat, rec.centerLng);
     this._locationInput.disabled = false;
     this._radiusInput.value = rec.radiusNm.toFixed(2);
@@ -133,6 +147,12 @@ export class ShapePopup {
     this._transparencyInput.value = pct;
     this._transparencyLabel.textContent = `${pct}% transparent`;
     this._selectColor(rec.color);
+
+    this._altEnabledCb.checked = rec.altEnabled ?? false;
+    this._altFloorInput.value = rec.altFloor ?? '';
+    this._altCeilingInput.value = rec.altCeiling ?? '';
+    this._syncAltDisabled();
+
     this._el.style.display = 'block';
     this._createCenterMarker(rec);
   }
@@ -148,9 +168,13 @@ export class ShapePopup {
   getPendingConfig() {
     const pct = parseInt(this._transparencyInput?.value ?? '74', 10);
     return {
-      name:    this._nameInput?.value.trim() || null,
-      color:   this._selectedColor,
-      opacity: (100 - pct) / 100,
+      name:        this._nameInput?.value.trim() || null,
+      description: this._descInput?.value.trim() || '',
+      color:       this._selectedColor,
+      opacity:     (100 - pct) / 100,
+      altEnabled:  this._altEnabledCb?.checked ?? false,
+      altFloor:    this._altFloorInput?.value !== '' ? parseFloat(this._altFloorInput.value) : null,
+      altCeiling:  this._altCeilingInput?.value !== '' ? parseFloat(this._altCeilingInput.value) : null,
     };
   }
 
@@ -167,6 +191,10 @@ export class ShapePopup {
       <div class="shape-popup__field">
         <label>Name</label>
         <input class="sp-name sp-input" type="text" autocomplete="off" />
+      </div>
+      <div class="shape-popup__field">
+        <label>Description</label>
+        <textarea class="sp-description sp-input" rows="2" maxlength="200" autocomplete="off"></textarea>
       </div>
       <div class="shape-popup__field">
         <label>Location</label>
@@ -187,6 +215,17 @@ export class ShapePopup {
           <span class="sp-transparency-label">74% transparent</span>
         </div>
       </div>
+      <div class="shape-popup__field">
+        <label class="sp-alt-header">
+          <input type="checkbox" class="sp-alt-enabled" />
+          Altitude (ft MSL)
+        </label>
+        <div class="sp-alt-fields sp-alt-fields--disabled">
+          <input class="sp-alt-floor sp-input" type="number" min="0" step="100" placeholder="Floor" disabled />
+          <span class="sp-alt-sep">–</span>
+          <input class="sp-alt-ceiling sp-input" type="number" min="0" step="100" placeholder="Ceiling" disabled />
+        </div>
+      </div>
       <div class="shape-popup__actions">
         <button class="sp-done sp-btn sp-btn--primary">Done</button>
         <button class="sp-cancel sp-btn">Cancel</button>
@@ -198,6 +237,29 @@ export class ShapePopup {
     this._nameInput.addEventListener('change', () => {
       if (!this._currentId) return;
       this._shapeManager.updateShape(this._currentId, { name: this._nameInput.value.trim() || `Circle ${this._currentId}` });
+    });
+
+    this._descInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      this._shapeManager.updateShape(this._currentId, { description: this._descInput.value.trim() });
+    });
+
+    this._altEnabledCb.addEventListener('change', () => {
+      this._syncAltDisabled();
+      if (!this._currentId) return;
+      this._shapeManager.updateShape(this._currentId, { altEnabled: this._altEnabledCb.checked });
+    });
+
+    this._altFloorInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      const val = this._altFloorInput.value !== '' ? parseFloat(this._altFloorInput.value) : null;
+      this._shapeManager.updateShape(this._currentId, { altFloor: val });
+    });
+
+    this._altCeilingInput.addEventListener('change', () => {
+      if (!this._currentId) return;
+      const val = this._altCeilingInput.value !== '' ? parseFloat(this._altCeilingInput.value) : null;
+      this._shapeManager.updateShape(this._currentId, { altCeiling: val });
     });
 
     this._locationInput.addEventListener('blur', () => {
@@ -247,6 +309,15 @@ export class ShapePopup {
       if (this._isNew) this._circleTool?.cancelPlacement();
       this.close();
     });
+  }
+
+  _syncAltDisabled() {
+    const enabled = this._altEnabledCb?.checked ?? false;
+    const fields = this._el?.querySelector('.sp-alt-fields');
+    if (!fields) return;
+    fields.classList.toggle('sp-alt-fields--disabled', !enabled);
+    this._altFloorInput.disabled = !enabled;
+    this._altCeilingInput.disabled = !enabled;
   }
 
   _createCenterMarker(rec) {
