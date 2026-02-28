@@ -176,7 +176,7 @@ export class MapCore {
       onEachFeature: (feature, layer) => {
         const p = feature.properties || {};
         if (p.featureType === 'waypoint' && p.showLabel && p.name) {
-          layer.bindTooltip(p.name, {
+          layer.bindTooltip(`<span style="color:${p.color || '#4da6ff'}">${p.name}</span>`, {
             permanent: true,
             direction: 'right',
             className: 'point-name-label',

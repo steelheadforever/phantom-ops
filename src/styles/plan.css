@@ -728,10 +728,14 @@
 .point-name-label {
   background: transparent !important;
   border: none !important;
+  box-shadow: none !important;
   pointer-events: none;
   font-family: 'B612 Mono', monospace;
   font-size: 10px;
   white-space: nowrap;
+}
+.point-name-label::before {
+  display: none !important;
 }
 
 /* Pre-placement placeholder row in coordinate tables */
