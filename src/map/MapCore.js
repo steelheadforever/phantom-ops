@@ -7,6 +7,7 @@ import { persistBaseLayerId, resolveInitialBaseLayerId } from './baseLayerPrefer
 import { resolveHealthyTileEndpoint } from '../services/runtimeSourceValidation.js';
 import { PANE_IDS } from './layerZIndex.js';
 import { CGRSLayer } from '../services/cgrs/CGRSLayer.js';
+import { getSymbolSvg } from '../services/drawing/pointSymbols.js';
 import { NavaidLayer } from '../services/navaids/NavaidLayer.js';
 import { FixLayer } from '../services/navaids/FixLayer.js';
 import { AirfieldLayer } from '../services/airfields/AirfieldLayer.js';
@@ -136,7 +137,7 @@ export class MapCore {
       this.layerManager.setLayerVisibility(def.id, true);
     }
 
-    // Simulated airspace — per-feature styling from GeoJSON properties
+    // Simulated airspace — per-feature styling matching the drawing tool theme
     const simLayer = L.geoJSON(null, {
       style: (feature) => {
         const p = feature.properties || {};
@@ -145,23 +146,43 @@ export class MapCore {
           fillColor: p.color || '#a0a0a0',
           fillOpacity: typeof p.fillOpacity === 'number' ? p.fillOpacity : 0.26,
           opacity: 0.95,
-          weight: p.weight || 1.8,
+          weight: p.weight || 1.5,
         };
       },
       pointToLayer: (feature, latlng) => {
         const p = feature.properties || {};
-        const marker = L.circleMarker(latlng, {
-          radius: 5,
-          color: p.color || '#4da6ff',
-          fillColor: p.color || '#4da6ff',
-          fillOpacity: 0.9,
-          weight: 1.5,
+        if (p.featureType === 'circle') {
+          return L.circle(latlng, {
+            radius: p.radiusNm * 1852,
+            color: p.color || '#a0a0a0',
+            fillColor: p.color || '#a0a0a0',
+            fillOpacity: typeof p.fillOpacity === 'number' ? p.fillOpacity : 0.26,
+            weight: p.weight || 1.5,
+            pane: PANE_IDS.AIRSPACE_SIMULATED,
+          });
+        }
+        // waypoint — match ShapeManager icon style
+        const svg = getSymbolSvg(p.symbol || 'waypoint', p.color || '#4da6ff', p.opacity ?? 0.5, 20);
+        return L.marker(latlng, {
+          icon: L.divIcon({
+            className: 'point-symbol-icon',
+            html: svg,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          }),
           pane: PANE_IDS.AIRSPACE_SIMULATED,
         });
-        if (p.showLabel && p.name) {
-          marker.bindTooltip(p.name, { permanent: true, direction: 'right', className: 'cgrs-label' });
+      },
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties || {};
+        if (p.featureType === 'waypoint' && p.showLabel && p.name) {
+          layer.bindTooltip(p.name, {
+            permanent: true,
+            direction: 'right',
+            className: 'point-name-label',
+            offset: [4, 0],
+          });
         }
-        return marker;
       },
     });
     const simLayerOptions = this.layerManager.registerLayer(SIMULATED_LAYER_DEF.id, simLayer, 'airspace-simulated');
