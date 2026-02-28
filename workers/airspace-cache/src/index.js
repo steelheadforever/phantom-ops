@@ -22,7 +22,8 @@ async function handleRequest(request, env) {
   const match = url.pathname.match(/^\/data\/airspace\/(class-[bcd]\.geojson)$/);
 
   if (!match) {
-    return new Response('Not found', { status: 404 });
+    // Not a Worker-managed path — let Cloudflare Pages serve it
+    return fetch(request);
   }
 
   const key = match[1];
