@@ -198,6 +198,10 @@ export class MapCore {
       console.warn('Operational source validation failed:', error);
     });
 
+    window.addEventListener('online', () => {
+      this.validateOperationalSources().catch(console.warn);
+    });
+
     return this.map;
   }
 
@@ -312,6 +316,7 @@ export class MapCore {
     }
 
     this._notifyStatusListeners();
+    this._scheduleSourceRetry();
 
     const ifrLow = this.sourceStatusByLayerId.get('base-ifr-low');
     const ifrHigh = this.sourceStatusByLayerId.get('base-ifr-high');
@@ -413,5 +418,28 @@ export class MapCore {
   _notifyStatusListeners() {
     const status = this.getSourceStatus();
     for (const cb of this._statusListeners) cb(status);
+  }
+
+  _scheduleSourceRetry() {
+    clearTimeout(this._retryTimer);
+    const { level } = this.getSourceStatus();
+    if (level === 'ok') return;
+
+    // Retry at 30s then 60s intervals while degraded
+    const delays = [30_000, 60_000];
+    let idx = 0;
+    const schedule = () => {
+      if (idx >= delays.length) return;
+      this._retryTimer = setTimeout(() => {
+        this.validateOperationalSources().catch(console.warn).finally(() => {
+          const { level: newLevel } = this.getSourceStatus();
+          if (newLevel !== 'ok') {
+            idx++;
+            schedule();
+          }
+        });
+      }, delays[idx]);
+    };
+    schedule();
   }
 }

@@ -1,6 +1,13 @@
 // z=8 tile over Texas (Randolph AFB area) — within range of all FAA chart services (minLOD 7–8)
 const DEFAULT_TILE_PROBE = Object.freeze({ z: 8, x: 58, y: 106 });
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1500;
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function withTimeout(fetchImpl, timeoutMs) {
   return async (url) => {
     const controller = new AbortController();
@@ -31,7 +38,7 @@ export async function validateTileEndpoint(template, { fetchImpl = (...args) => 
   try {
     const response = await timedFetch(probeUrl);
     const contentType = response.headers?.get?.('content-type') ?? '';
-    const ok = response.ok && /image\//i.test(contentType);
+    const ok = response.ok && (/image\//i.test(contentType) || contentType === 'application/octet-stream');
     return { ok, status: response.status, contentType, probeUrl, template };
   } catch (error) {
     return { ok: false, status: 0, contentType: '', probeUrl, template, error: error.message };
@@ -43,7 +50,12 @@ export async function resolveHealthyTileEndpoint(primaryTemplate, fallbackTempla
   const evidence = [];
 
   for (const template of candidates) {
-    const result = await validateTileEndpoint(template, options);
+    let result;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      result = await validateTileEndpoint(template, options);
+      if (result.ok || result.status !== 0) break; // only retry on network/timeout errors
+      if (attempt < MAX_RETRIES - 1) await delay(RETRY_DELAY_MS);
+    }
     evidence.push(result);
     if (result.ok) {
       return { template, evidence };

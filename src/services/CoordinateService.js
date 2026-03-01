@@ -96,10 +96,10 @@ export class CoordinateService {
       : (decimal >= 0 ? 'E' : 'W');
 
     const absolute = Math.abs(decimal);
-    const degrees = Math.floor(absolute);
-    const minutes = (absolute - degrees) * 60;
+    const degrees = String(Math.floor(absolute)).padStart(isLatitude ? 2 : 3, '0');
+    const minutes = ((absolute - Math.floor(absolute)) * 60).toFixed(4).padStart(7, '0');
 
-    return `${degrees}°${minutes.toFixed(4)}'${hemisphere}`;
+    return `${hemisphere}${degrees}°${minutes}'`;
   }
 
   toDms(decimal, isLatitude) {
@@ -108,12 +108,16 @@ export class CoordinateService {
       : (decimal >= 0 ? 'E' : 'W');
 
     const absolute = Math.abs(decimal);
-    const degrees = Math.floor(absolute);
-    const minutesRaw = (absolute - degrees) * 60;
-    const minutes = Math.floor(minutesRaw);
-    const seconds = (minutesRaw - minutes) * 60;
+    const degreesRaw = Math.floor(absolute);
+    const minutesRaw = (absolute - degreesRaw) * 60;
+    const minutesInt = Math.floor(minutesRaw);
+    const seconds = (minutesRaw - minutesInt) * 60;
 
-    return `${degrees}°${minutes}'${seconds.toFixed(2)}"${hemisphere}`;
+    const degrees = String(degreesRaw).padStart(isLatitude ? 2 : 3, '0');
+    const minutes = String(minutesInt).padStart(2, '0');
+    const secs = seconds.toFixed(2).padStart(5, '0');
+
+    return `${hemisphere}${degrees}°${minutes}'${secs}"`;
   }
 }
 

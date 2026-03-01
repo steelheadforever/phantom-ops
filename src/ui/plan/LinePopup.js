@@ -18,6 +18,32 @@ const TACTICAL_COLORS = [
   { label: 'Black',  hex: '#1a1a1a' },
 ];
 
+function makeDraggable(el, handle) {
+  if (document.body.classList.contains('is-touch')) return;
+  handle.addEventListener('mousedown', (startEvt) => {
+    startEvt.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const offsetX = startEvt.clientX - rect.left;
+    const offsetY = startEvt.clientY - rect.top;
+    el.style.right = '';
+    el.style.left = `${rect.left}px`;
+    el.style.top = `${rect.top}px`;
+
+    const onMove = (e) => {
+      const x = Math.min(Math.max(0, e.clientX - offsetX), window.innerWidth - el.offsetWidth);
+      const y = Math.min(Math.max(0, e.clientY - offsetY), window.innerHeight - el.offsetHeight);
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
 const DASH_OPTIONS = [
   { value: 'solid',    label: 'Solid' },
   { value: 'dashed',   label: 'Dashed' },
@@ -82,6 +108,8 @@ export class LinePopup {
       if (!this._currentId || this._isPre) return;
       this._refreshTable();
     });
+
+    makeDraggable(el, el.querySelector('.shape-popup__title'));
 
     return this;
   }
