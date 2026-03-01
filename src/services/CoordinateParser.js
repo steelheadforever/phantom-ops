@@ -38,29 +38,62 @@ export class CoordinateParser {
   }
 
   _tryDms(s) {
-    // Match two DMS groups: deg° min' sec" [NSEW]
-    const part = String.raw`(\d{1,3})[°\s]\s*(\d{1,2})['\u2019\u02BC]\s*([\d.]+)["″\u2033]\s*([NSEWnsew])`;
-    const re = new RegExp(`${part}[,\\s]+${part}`, 'i');
-    const m = s.match(re);
-    if (!m) return null;
+    // Pattern 1: symbols + suffix hemisphere (e.g. 29° 32' 06.57" N, 98° 16' 48.12" W)
+    const part1 = String.raw`(\d{1,3})[°\s]\s*(\d{1,2})['\u2019\u02BC]\s*([\d.]+)["″\u2033]\s*([NSEWnsew])`;
+    const m1 = s.match(new RegExp(`${part1}[,\\s]+${part1}`, 'i'));
+    if (m1) {
+      const a = this._dmsToDecimal(+m1[1], +m1[2], +m1[3], m1[4].toUpperCase());
+      const b = this._dmsToDecimal(+m1[5], +m1[6], +m1[7], m1[8].toUpperCase());
+      return this._assignLatLng(a, m1[4].toUpperCase(), b, m1[8].toUpperCase());
+    }
 
-    const first = this._dmsToDecimal(+m[1], +m[2], +m[3], m[4].toUpperCase());
-    const second = this._dmsToDecimal(+m[5], +m[6], +m[7], m[8].toUpperCase());
+    // Pattern 2: prefix hemisphere, no symbols (e.g. N29 32 06.57 W98 16 48.12)
+    const m2 = s.match(/([NSEWnsew])\s*(\d{1,3})\s+(\d{1,2})\s+([\d.]+)\s+([NSEWnsew])\s*(\d{1,3})\s+(\d{1,2})\s+([\d.]+)/i);
+    if (m2) {
+      const a = this._dmsToDecimal(+m2[2], +m2[3], +m2[4], m2[1].toUpperCase());
+      const b = this._dmsToDecimal(+m2[6], +m2[7], +m2[8], m2[5].toUpperCase());
+      return this._assignLatLng(a, m2[1].toUpperCase(), b, m2[5].toUpperCase());
+    }
 
-    return this._assignLatLng(first, m[4].toUpperCase(), second, m[8].toUpperCase());
+    // Pattern 3: suffix hemisphere, no symbols (e.g. 29 32 06.57N 98 16 48.12W)
+    const m3 = s.match(/(\d{1,3})\s+(\d{1,2})\s+([\d.]+)\s*([NSEWnsew])\s+(\d{1,3})\s+(\d{1,2})\s+([\d.]+)\s*([NSEWnsew])/i);
+    if (m3) {
+      const a = this._dmsToDecimal(+m3[1], +m3[2], +m3[3], m3[4].toUpperCase());
+      const b = this._dmsToDecimal(+m3[5], +m3[6], +m3[7], m3[8].toUpperCase());
+      return this._assignLatLng(a, m3[4].toUpperCase(), b, m3[8].toUpperCase());
+    }
+
+    return null;
   }
 
   _tryDmm(s) {
-    // Match two DMM groups: deg° min' [NSEW]
-    const part = String.raw`(\d{1,3})[°\s]\s*([\d.]+)['\u2019\u02BC]\s*([NSEWnsew])`;
-    const re = new RegExp(`${part}[,\\s]+${part}`, 'i');
-    const m = s.match(re);
-    if (!m) return null;
+    // Pattern 1: symbols + suffix hemisphere (e.g. 29° 32.1095' N, 98° 16.8020' W)
+    const part1 = String.raw`(\d{1,3})[°\s]\s*([\d.]+)['\u2019\u02BC]\s*([NSEWnsew])`;
+    const m1 = s.match(new RegExp(`${part1}[,\\s]+${part1}`, 'i'));
+    if (m1) {
+      const a = this._dmmToDecimal(+m1[1], +m1[2], m1[3].toUpperCase());
+      const b = this._dmmToDecimal(+m1[4], +m1[5], m1[6].toUpperCase());
+      return this._assignLatLng(a, m1[3].toUpperCase(), b, m1[6].toUpperCase());
+    }
 
-    const first = this._dmmToDecimal(+m[1], +m[2], m[3].toUpperCase());
-    const second = this._dmmToDecimal(+m[4], +m[5], m[6].toUpperCase());
+    // Pattern 2: prefix hemisphere, no symbols (e.g. N29 32.1095 W98 16.8020)
+    // Minutes must have decimal point to distinguish from DMS
+    const m2 = s.match(/([NSEWnsew])\s*(\d{1,3})\s+(\d+\.\d+)\s+([NSEWnsew])\s*(\d{1,3})\s+(\d+\.\d+)/i);
+    if (m2) {
+      const a = this._dmmToDecimal(+m2[2], +m2[3], m2[1].toUpperCase());
+      const b = this._dmmToDecimal(+m2[5], +m2[6], m2[4].toUpperCase());
+      return this._assignLatLng(a, m2[1].toUpperCase(), b, m2[4].toUpperCase());
+    }
 
-    return this._assignLatLng(first, m[3].toUpperCase(), second, m[6].toUpperCase());
+    // Pattern 3: suffix hemisphere, no symbols (e.g. 29 32.1095N 98 16.8020W)
+    const m3 = s.match(/(\d{1,3})\s+(\d+\.\d+)\s*([NSEWnsew])\s+(\d{1,3})\s+(\d+\.\d+)\s*([NSEWnsew])/i);
+    if (m3) {
+      const a = this._dmmToDecimal(+m3[1], +m3[2], m3[3].toUpperCase());
+      const b = this._dmmToDecimal(+m3[4], +m3[5], m3[6].toUpperCase());
+      return this._assignLatLng(a, m3[3].toUpperCase(), b, m3[6].toUpperCase());
+    }
+
+    return null;
   }
 
   _tryDd(s) {

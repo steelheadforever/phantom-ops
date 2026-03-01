@@ -76,8 +76,8 @@ export class CoordinateService {
       // Find where zone number ends (leading digits)
       let z = 0;
       while (z < raw.length && raw[z] >= '0' && raw[z] <= '9') z++;
-      const zone   = raw.slice(0, z);
-      const square = raw.slice(z + 1, z + 3); // skip band letter at index z
+      const zone   = raw.slice(0, z + 1);       // digits + band letter (e.g. "14R")
+      const square = raw.slice(z + 1, z + 3); // 2-letter grid square
       const easting  = raw.slice(z + 3, z + 8);
       const northing = raw.slice(z + 8, z + 13);
       return `${zone} ${square} ${easting} ${northing}`;

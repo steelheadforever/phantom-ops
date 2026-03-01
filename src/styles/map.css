@@ -11,6 +11,7 @@
 
 body {
   font-family: 'B612 Mono', ui-monospace, monospace;
+  text-transform: uppercase;
   background: #0a0a0a;
   overflow: hidden;
 }
