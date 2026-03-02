@@ -749,6 +749,242 @@
   text-align: center;
 }
 
+/* ─── Route Popup ───────────────────────────────────────────── */
+
+.route-popup {
+  width: 380px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+/* Header grid: label | input pairs */
+.rp-header-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+.rp-lbl {
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.rp-lbl-mid {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+.rp-inline-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: nowrap;
+}
+
+.rp-time-input { width: 57px !important; flex: none !important; }
+.rp-short-input { width: 47px !important; flex: none !important; }
+.rp-medium-input { width: 69px !important; flex: none !important; }
+
+/* Waypoint container */
+.rp-wp-container {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  margin-bottom: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Each WP block */
+.route-wp-card {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 5px 6px;
+}
+
+.route-wp-card:last-child {
+  border-bottom: none;
+}
+
+/* Row inside a card */
+.route-wp-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: nowrap;
+  margin-bottom: 3px;
+}
+
+.route-wp-row:last-child {
+  margin-bottom: 0;
+}
+
+/* Leg row (L1, L2...) is slightly dimmer */
+.route-leg-row {
+  margin-top: 2px;
+}
+
+/* Actions row */
+.route-act-row {
+  margin-top: 2px;
+}
+
+/* WP/Leg prefix label */
+.route-wp-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  min-width: 24px;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+.route-wp-label--dim {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Editable inputs */
+.route-field {
+  min-width: 0;
+}
+
+.route-coord-input {
+  flex: 1;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+.route-ident-input {
+  width: 52px !important;
+  flex: none !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+.route-alt-input {
+  width: 60px !important;
+  flex: none !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+.route-short-input {
+  width: 43px !important;
+  flex: none !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+/* Compact "/" separator between paired inputs (e.g. wind HDG / SPD) */
+.route-sep {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  padding: 0 1px;
+}
+
+/* Computed (read-only) cells */
+.route-field--computed {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+  padding: 0 3px;
+  flex-shrink: 0;
+  pointer-events: none;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+}
+
+/* Totals row */
+.rp-totals {
+  margin-bottom: 8px;
+}
+
+.route-totals {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid rgba(245, 168, 0, 0.3);
+  padding-top: 6px;
+  flex-wrap: wrap;
+}
+
+.route-totals__label {
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+/* Place button (reuses lp-place-btn styles) */
+.rp-place-btn {
+  margin-bottom: 8px;
+}
+
+/* ─── WP dot marker (draggable L.marker) ────────────────────── */
+
+.route-wp-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.route-wp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #a0a0a0;
+  border: 1.5px solid #ffffff;
+  box-sizing: border-box;
+  cursor: grab;
+}
+
+.route-wp-dot:active {
+  cursor: grabbing;
+}
+
+/* ─── Leg label (divIcon on map) ─────────────────────────────── */
+
+.route-leg-label {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.route-leg-label div {
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: rgba(200, 200, 200, 0.85);
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Hide number input spinners — values are typed, not clicked */
+.route-popup input[type="number"]::-webkit-outer-spin-button,
+.route-popup input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.route-popup input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Mobile: route popup as bottom sheet */
+@media (max-width: 640px) {
+  .route-popup {
+    top: unset;
+    right: 0;
+    left: 0;
+    bottom: var(--bottom-bar-height);
+    border-radius: 12px 12px 0 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    width: 100%;
+  }
+}
+
 /* ─── Line name label (divIcon on map) ─────────────────────────── */
 .line-label {
   background: transparent !important;

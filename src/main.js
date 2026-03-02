@@ -23,6 +23,10 @@ import { ScratchPad } from './ui/ScratchPad.js';
 import { ContextMenu } from './ui/ContextMenu.js';
 import { DrawShapesPanel } from './ui/plan/DrawShapesPanel.js';
 import { PlanPanel } from './ui/plan/PlanPanel.js';
+import { RouteManager } from './services/routes/RouteManager.js';
+import { RouteDrawTool } from './services/routes/RouteDrawTool.js';
+import { RoutePopup } from './ui/plan/RoutePopup.js';
+import { FlightRoutePanel } from './ui/plan/FlightRoutePanel.js';
 import { StudyPanel } from './ui/study/StudyPanel.js';
 import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
 import { OpsLimitsPanel } from './ui/study/OpsLimitsPanel.js';
@@ -79,7 +83,20 @@ const drawShapesPanel = new DrawShapesPanel({
   lineTool, linePopup,
   pointTool, pointPopup,
 });
-const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel });
+
+// ── Route planning ─────────────────────────────────────────────
+const routeManager = new RouteManager();
+routeManager.restore(map);
+
+const routePopup = new RoutePopup({ routeManager, coordinateService, coordinateParser, routeTool: null, map });
+routePopup.mount(document.body);
+
+const routeTool = new RouteDrawTool({ map, routeManager, routePopup });
+routePopup._routeTool = routeTool;
+
+const flightRoutePanel = new FlightRoutePanel({ sideMenu: null, routeManager, routeTool, routePopup });
+
+const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel, flightRoutePanel });
 
 // ── Study UI ───────────────────────────────────────────────────
 const studyPanel = new StudyPanel();
@@ -95,10 +112,11 @@ const sideMenu = new SideMenu({
   planPanel,
   studyPanel,
   readmePanel,
-  onResetData: () => shapeManager.clearAll(),
+  onResetData: () => { shapeManager.clearAll(); routeManager.clearAll(); },
 }).mount(document.body);
 
 drawShapesPanel._sideMenu = sideMenu;
+flightRoutePanel._sideMenu = sideMenu;
 planPanel._sideMenu = sideMenu;
 studyPanel._sideMenu = sideMenu;
 studyPanel._boldfacePanel = boldfacePanel;

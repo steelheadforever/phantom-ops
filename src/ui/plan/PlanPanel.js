@@ -1,11 +1,12 @@
 /**
  * PlanPanel — top-level Plan submenu.
- * Three items: Draw Shapes (enabled), Draw Route (SOON), Add Tasks (SOON).
+ * Three items: Draw Shapes (enabled), Draw Route (enabled), Add Tasks (SOON).
  */
 export class PlanPanel {
-  constructor({ sideMenu, drawShapesPanel }) {
+  constructor({ sideMenu, drawShapesPanel, flightRoutePanel }) {
     this._sideMenu = sideMenu;
     this._drawShapesPanel = drawShapesPanel;
+    this._flightRoutePanel = flightRoutePanel;
     this.el = this._build();
   }
 
@@ -29,8 +30,13 @@ export class PlanPanel {
       this._sideMenu.pushView('draw-shapes', this._drawShapesPanel.el);
     });
 
+    const drawRouteBtn = this._makeBtn('Draw Route', false);
+    drawRouteBtn.addEventListener('click', () => {
+      this._sideMenu.pushView('flight-route', this._flightRoutePanel.el);
+    });
+
     btnGroup.appendChild(drawShapesBtn);
-    btnGroup.appendChild(this._makeBtn('Draw Route', true));
+    btnGroup.appendChild(drawRouteBtn);
     btnGroup.appendChild(this._makeBtn('Add Tasks', true));
     el.appendChild(btnGroup);
 
