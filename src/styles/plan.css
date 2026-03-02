@@ -999,3 +999,210 @@
   white-space: nowrap;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.8);
 }
+
+/* ─── Op Mission Popup ──────────────────────────────────────── */
+
+.opm-popup {
+  width: 310px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+/* WP container — scrollable */
+.opm-wp-container {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  margin-bottom: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* Each WP block */
+.opm-wp-card {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 5px 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.opm-wp-card:last-child {
+  border-bottom: none;
+}
+
+.opm-wp-card:hover {
+  background: rgba(244, 162, 97, 0.05);
+}
+
+.opm-wp-card--selected {
+  background: rgba(244, 162, 97, 0.12) !important;
+  border-left: 2px solid #f4a261;
+  padding-left: 4px;
+}
+
+/* Row inside a card */
+.opm-wp-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: nowrap;
+  margin-bottom: 3px;
+}
+
+.opm-wp-row:last-child {
+  margin-bottom: 0;
+}
+
+.opm-act-row {
+  margin-top: 2px;
+}
+
+/* WP prefix label */
+.opm-wp-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  min-width: 20px;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+/* Coord input — takes remaining width */
+.opm-coord-input {
+  flex: 1 !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+  min-width: 0;
+}
+
+/* FIX ident input */
+.opm-ident-input {
+  width: 68px !important;
+  flex: none !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+/* Altitude input */
+.opm-alt-input {
+  width: 69px !important;
+  flex: none !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+/* Short input (radius, exit value) */
+.opm-short-input {
+  width: 47px !important;
+  flex: none !important;
+  font-size: 10px !important;
+  padding: 3px 5px !important;
+}
+
+/* Exit select dropdown */
+.opm-exit-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  outline: none;
+}
+
+.opm-exit-select option {
+  background: #0e1634;
+}
+
+/* ─── Op Mission WP dot marker (draggable L.marker) ─────────── */
+
+.opm-wp-marker {
+  background: transparent !important;
+  border: none !important;
+  z-index: 999 !important; /* ensure above SVG polyline in same pane */
+}
+
+.opm-wp-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #f4a261;
+  border: 1.5px solid #1a1a1a;
+  box-sizing: border-box;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.opm-wp-dot:active {
+  cursor: grabbing;
+}
+
+/* ─── Loiter direction arrow (divIcon on map) ───────────────── */
+
+.opm-loiter-arrow {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.opm-loiter-arrow div {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f4a261;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+  line-height: 1;
+  text-align: center;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+}
+
+/* ─── Selected WP pulsing ring (divIcon on map) ─────────────── */
+
+@keyframes opm-pulse {
+  0%   { transform: scale(1);   opacity: 0.9; }
+  50%  { transform: scale(1.6); opacity: 0.4; }
+  100% { transform: scale(1);   opacity: 0.9; }
+}
+
+.opm-selected-ring {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.opm-selected-ring div {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #f4a261;
+  box-sizing: border-box;
+  animation: opm-pulse 1.4s ease-in-out infinite;
+}
+
+/* Hide number input spinners in opm-popup */
+.opm-popup input[type="number"]::-webkit-outer-spin-button,
+.opm-popup input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.opm-popup input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Mobile: opm popup as bottom sheet */
+@media (max-width: 640px) {
+  .opm-popup {
+    top: unset;
+    right: 0;
+    left: 0;
+    bottom: var(--bottom-bar-height);
+    border-radius: 12px 12px 0 0;
+    max-height: 65vh;
+    overflow-y: auto;
+    width: 100% !important;
+  }
+}

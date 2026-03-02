@@ -55,6 +55,38 @@ export async function searchPointByIdent(ident) {
 }
 
 /**
+ * Search for a point by ident, checking local simulated airspace first.
+ * Falls back to FAA ADDS if not found in sim layer.
+ * @param {string} ident
+ * @param {L.GeoJSON|null} simLayer - simulated airspace layer (may be null/undefined)
+ * @returns {Promise<{lat: number, lon: number, name: string, type: string} | null>}
+ */
+export async function searchPointByIdentWithSim(ident, simLayer) {
+  // 1. Local simulated airspace (synchronous scan)
+  if (simLayer) {
+    let found = null;
+    simLayer.eachLayer((fl) => {
+      if (found) return;
+      const name = (fl.feature?.properties?.name ?? '').toUpperCase();
+      if (name === ident.toUpperCase()) {
+        const geom = fl.feature?.geometry;
+        if (geom?.type === 'Point') {
+          found = {
+            lat: geom.coordinates[1],
+            lon: geom.coordinates[0],
+            name: fl.feature.properties.name,
+            type: 'SIM',
+          };
+        }
+      }
+    });
+    if (found) return found;
+  }
+  // 2. FAA ADDS fallback
+  return searchPointByIdent(ident);
+}
+
+/**
  * Fetch all US navaids from FAA ADDS ArcGIS FeatureServer.
  * Paginates automatically (max 1000 records/page, ~3 pages for full US).
  * @returns {Promise<GeoJSON.Feature[]>}
