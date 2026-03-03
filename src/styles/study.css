@@ -353,6 +353,176 @@
   text-align: center;
 }
 
+/* ─── Practice overlay ────────────────────────────────────── */
+
+/* Buzz animation for wrong answers */
+@keyframes fc-buzz {
+  0%,  100% { transform: translateX(0); }
+  15%        { transform: translateX(-7px); }
+  30%        { transform: translateX(7px); }
+  45%        { transform: translateX(-5px); }
+  60%        { transform: translateX(5px); }
+  75%        { transform: translateX(-2px); }
+  90%        { transform: translateX(2px); }
+}
+
+.fc-buzz {
+  animation: fc-buzz 0.45s ease;
+}
+
+/* Shared practice input */
+.fc-practice-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.95);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  padding: 5px 8px;
+  flex: 1;
+  min-width: 60px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.fc-practice-input:focus {
+  border-color: rgba(43, 58, 171, 0.8);
+}
+
+.fc-practice-input--hinted {
+  color: var(--gold);
+  border-color: rgba(245, 168, 0, 0.35);
+}
+
+/* Smaller input for ops limits fields */
+.fc-practice-input--sm {
+  min-width: 80px;
+  max-width: 160px;
+}
+
+/* Boldface practice step rows */
+.fc-practice-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.fc-practice-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-step-num {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+/* Three-button practice nav row: PREV | HINT | NEXT */
+.fc-nav-row--practice {
+  display: flex;
+  gap: 8px;
+}
+
+.fc-nav-row--practice .fc-btn--nav {
+  flex: 1;
+}
+
+/* HINT button */
+.fc-btn--hint {
+  padding: 10px 14px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.fc-btn--hint:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Completion row: DONE | REPEAT */
+.fc-complete-row {
+  display: flex;
+  gap: 10px;
+}
+
+.fc-btn--done {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 12px;
+  background: rgba(245, 168, 0, 0.12);
+  border: 1px solid rgba(245, 168, 0, 0.4);
+  color: var(--gold);
+}
+
+.fc-btn--done:hover {
+  background: rgba(245, 168, 0, 0.22);
+}
+
+.fc-btn--repeat {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.fc-btn--repeat:hover {
+  background: rgba(43, 58, 171, 0.3);
+  border-color: var(--blue-border);
+  color: var(--gold);
+}
+
+/* ─── Ops Limits practice lines ───────────────────────────── */
+
+.fc-pr-ol-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.fc-pr-ol-line {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fc-pr-ol-prompt {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.fc-pr-ol-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-left: 6px;
+}
+
+.fc-pr-ol-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fc-pr-ol-unit {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.45);
+  white-space: nowrap;
+}
+
 /* ─── Ops Limits card lines ───────────────────────────────── */
 
 .fc-ol-lines {

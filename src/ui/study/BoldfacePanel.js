@@ -1,9 +1,11 @@
 import { FlashcardOverlay } from './FlashcardOverlay.js';
+import { BoldfacePracticeOverlay } from './BoldfacePracticeOverlay.js';
 
 export class BoldfacePanel {
   constructor() {
     this._sideMenu = null;
     this._overlay = new FlashcardOverlay();
+    this._practiceOverlay = new BoldfacePracticeOverlay();
     this.el = this._build();
   }
 
@@ -28,9 +30,12 @@ export class BoldfacePanel {
     });
 
     const practice = document.createElement('button');
-    practice.className = 'panel-section-btn panel-section-btn--disabled';
-    practice.disabled = true;
-    practice.innerHTML = 'PRACTICE<span class="side-menu__btn-tag">SOON</span>';
+    practice.className = 'panel-section-btn';
+    practice.textContent = 'PRACTICE';
+    practice.addEventListener('click', () => {
+      this._sideMenu?.close();
+      this._practiceOverlay.open();
+    });
 
     btnGroup.appendChild(flashcards);
     btnGroup.appendChild(practice);

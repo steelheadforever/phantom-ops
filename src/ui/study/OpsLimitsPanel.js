@@ -1,9 +1,11 @@
 import { OpsLimitsFlashcardOverlay } from './OpsLimitsFlashcardOverlay.js';
+import { OpsLimitsPracticeOverlay } from './OpsLimitsPracticeOverlay.js';
 
 export class OpsLimitsPanel {
   constructor() {
     this._sideMenu = null;
     this._overlay = new OpsLimitsFlashcardOverlay();
+    this._practiceOverlay = new OpsLimitsPracticeOverlay();
     this.el = this._build();
   }
 
@@ -28,9 +30,12 @@ export class OpsLimitsPanel {
     });
 
     const practice = document.createElement('button');
-    practice.className = 'panel-section-btn panel-section-btn--disabled';
-    practice.disabled = true;
-    practice.innerHTML = 'PRACTICE<span class="side-menu__btn-tag">SOON</span>';
+    practice.className = 'panel-section-btn';
+    practice.textContent = 'PRACTICE';
+    practice.addEventListener('click', () => {
+      this._sideMenu?.close();
+      this._practiceOverlay.open();
+    });
 
     btnGroup.appendChild(flashcards);
     btnGroup.appendChild(practice);
