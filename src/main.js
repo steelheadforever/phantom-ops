@@ -31,6 +31,10 @@ import { OpMissionManager } from './services/opmission/OpMissionManager.js';
 import { OpMissionDrawTool } from './services/opmission/OpMissionDrawTool.js';
 import { OpMissionPopup } from './ui/plan/OpMissionPopup.js';
 import { OpMissionPanel } from './ui/plan/OpMissionPanel.js';
+import { EMissionManager } from './services/emission/EMissionManager.js';
+import { EMissionDrawTool } from './services/emission/EMissionDrawTool.js';
+import { EMissionPopup } from './ui/plan/EMissionPopup.js';
+import { EMissionPanel } from './ui/plan/EMissionPanel.js';
 import { StudyPanel } from './ui/study/StudyPanel.js';
 import { BoldfacePanel } from './ui/study/BoldfacePanel.js';
 import { OpsLimitsPanel } from './ui/study/OpsLimitsPanel.js';
@@ -124,7 +128,30 @@ const opMissionPanel = new OpMissionPanel({
   opMissionPopup,
 });
 
-const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel, flightRoutePanel, opMissionPanel });
+// ── E-Mission planning ──────────────────────────────────────────
+const eMissionManager = new EMissionManager();
+eMissionManager.restore(map);
+
+const eMissionPopup = new EMissionPopup({
+  eMissionManager,
+  coordinateService,
+  coordinateParser,
+  map,
+  airspaceLayers: mapCore.airspaceLayers,
+});
+eMissionPopup.mount(document.body);
+
+const eMissionTool = new EMissionDrawTool({ map, eMissionManager, eMissionPopup });
+eMissionPopup._eMissionTool = eMissionTool;
+
+const eMissionPanel = new EMissionPanel({
+  sideMenu: null,
+  eMissionManager,
+  eMissionTool,
+  eMissionPopup,
+});
+
+const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel, flightRoutePanel, opMissionPanel, eMissionPanel });
 
 // ── Study UI ───────────────────────────────────────────────────
 const studyPanel = new StudyPanel();
@@ -140,12 +167,13 @@ const sideMenu = new SideMenu({
   planPanel,
   studyPanel,
   readmePanel,
-  onResetData: () => { shapeManager.clearAll(); routeManager.clearAll(); opMissionManager.clearAll(); },
+  onResetData: () => { shapeManager.clearAll(); routeManager.clearAll(); opMissionManager.clearAll(); eMissionManager.clearAll(); },
 }).mount(document.body);
 
 drawShapesPanel._sideMenu = sideMenu;
 flightRoutePanel._sideMenu = sideMenu;
 opMissionPanel._sideMenu = sideMenu;
+eMissionPanel._sideMenu = sideMenu;
 planPanel._sideMenu = sideMenu;
 studyPanel._sideMenu = sideMenu;
 studyPanel._boldfacePanel = boldfacePanel;

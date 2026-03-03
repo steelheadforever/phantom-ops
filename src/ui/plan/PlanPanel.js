@@ -3,11 +3,12 @@
  * Three items: Draw Shapes (enabled), Draw Route (enabled), Add Tasks (SOON).
  */
 export class PlanPanel {
-  constructor({ sideMenu, drawShapesPanel, flightRoutePanel, opMissionPanel }) {
+  constructor({ sideMenu, drawShapesPanel, flightRoutePanel, opMissionPanel, eMissionPanel }) {
     this._sideMenu = sideMenu;
     this._drawShapesPanel = drawShapesPanel;
     this._flightRoutePanel = flightRoutePanel;
     this._opMissionPanel = opMissionPanel;
+    this._eMissionPanel = eMissionPanel;
     this.el = this._build();
   }
 
@@ -41,9 +42,15 @@ export class PlanPanel {
       this._sideMenu.pushView('op-mission', this._opMissionPanel.el);
     });
 
+    const eMissionBtn = this._makeBtn('E-Mission', false);
+    eMissionBtn.addEventListener('click', () => {
+      this._sideMenu.pushView('e-mission', this._eMissionPanel.el);
+    });
+
     btnGroup.appendChild(drawShapesBtn);
     btnGroup.appendChild(drawRouteBtn);
     btnGroup.appendChild(opMissionBtn);
+    btnGroup.appendChild(eMissionBtn);
     btnGroup.appendChild(this._makeBtn('Add Tasks', true));
     el.appendChild(btnGroup);
 

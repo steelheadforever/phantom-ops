@@ -1206,3 +1206,168 @@
     width: 100% !important;
   }
 }
+
+/* ─── E-Mission Popup ───────────────────────────────────────── */
+
+.em-popup {
+  width: 310px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+/* WP container — scrollable */
+.em-popup .em-wp-container {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  margin-bottom: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* Each WP block — red accent (reuses opm-wp-card layout) */
+.em-wp-card {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 5px 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.em-wp-card:last-child {
+  border-bottom: none;
+}
+
+.em-wp-card:hover {
+  background: rgba(230, 57, 70, 0.05);
+}
+
+.em-wp-card--selected {
+  background: rgba(230, 57, 70, 0.12) !important;
+  border-left: 2px solid #e63946;
+  padding-left: 4px;
+}
+
+/* Last 6 label — lit red when active */
+.em-last6-label {
+  user-select: none;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Done button — red primary */
+.em-done--red {
+  background: rgba(230, 57, 70, 0.18) !important;
+  border-color: #e63946 !important;
+  color: #e63946 !important;
+}
+
+.em-done--red:not(:disabled):hover {
+  background: rgba(230, 57, 70, 0.32) !important;
+}
+
+.em-done--red:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Hide spinners inside em-popup number inputs */
+.em-popup input[type="number"]::-webkit-outer-spin-button,
+.em-popup input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.em-popup input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ─── E-Mission WP dot marker ───────────────────────────────── */
+
+.em-wp-marker {
+  background: transparent !important;
+  border: none !important;
+  z-index: 999 !important;
+}
+
+.em-wp-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #e63946;
+  border: 1.5px solid #1a1a1a;
+  box-sizing: border-box;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.em-wp-dot:active {
+  cursor: grabbing;
+}
+
+/* Last 6 dot — red fill, black border, black number for contrast over hexagon line */
+.em-wp-dot--last6 {
+  background: #e63946;
+  border: 2px solid #1a1a1a;
+  color: #1a1a1a;
+}
+
+/* ─── Loiter direction arrow (divIcon on map) ───────────────── */
+
+.em-loiter-arrow {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.em-loiter-arrow div {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e63946;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+  line-height: 1;
+  text-align: center;
+  font-family: 'B612 Mono', ui-monospace, monospace;
+}
+
+/* ─── Selected WP pulsing ring (red) ────────────────────────── */
+
+@keyframes em-pulse {
+  0%   { transform: scale(1);   opacity: 0.9; }
+  50%  { transform: scale(1.6); opacity: 0.4; }
+  100% { transform: scale(1);   opacity: 0.9; }
+}
+
+.em-selected-ring {
+  background: transparent !important;
+  border: none !important;
+  pointer-events: none !important;
+}
+
+.em-selected-ring div {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #e63946;
+  box-sizing: border-box;
+  animation: em-pulse 1.4s ease-in-out infinite;
+}
+
+/* Mobile: em popup as bottom sheet */
+@media (max-width: 640px) {
+  .em-popup {
+    top: unset;
+    right: 0;
+    left: 0;
+    bottom: var(--bottom-bar-height);
+    border-radius: 12px 12px 0 0;
+    max-height: 65vh;
+    overflow-y: auto;
+    width: 100% !important;
+  }
+}
