@@ -69,6 +69,7 @@ export class OpMissionPopup {
 
     this._selectedWpIndex = null;
     this._selectionRing = null;
+    this._snapshot = null;
   }
 
   mount(root = document.body) {
@@ -150,6 +151,7 @@ export class OpMissionPopup {
     this._isPre = false;
     this._placingEnabled = false;
     this._selectedWpIndex = null;
+    this._snapshot = isNew ? null : JSON.parse(JSON.stringify(rec));
 
     this._nameInput.value = rec.name ?? '';
     this._updatePlaceBtn();
@@ -158,10 +160,18 @@ export class OpMissionPopup {
   }
 
   close() {
+    this._missionTool?.cancelInsert();
     this._el.style.display = 'none';
     this._currentId = null;
     this._isPre = false;
     this._removeSelectionRing();
+  }
+
+  /** Clear active state from all insert buttons (called by OpMissionDrawTool.cancelInsert). */
+  refreshInsertButtons() {
+    this._wpContainer?.querySelectorAll('.opm-wp-insert-btn--active').forEach((btn) => {
+      btn.classList.remove('opm-wp-insert-btn--active');
+    });
   }
 
   /** Rebuild the waypoint table (called after any WP addition or update). */
@@ -360,6 +370,19 @@ export class OpMissionPopup {
     const spacer = document.createElement('span');
     spacer.style.flex = '1';
 
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'opm-wp-insert-btn';
+    insertBtn.title = 'Insert waypoint after this one';
+    insertBtn.textContent = '+';
+    insertBtn.addEventListener('click', () => {
+      const isActive = insertBtn.classList.toggle('opm-wp-insert-btn--active');
+      if (isActive) {
+        this._missionTool?.startInsert(this._currentId, i);
+      } else {
+        this._missionTool?.cancelInsert();
+      }
+    });
+
     const delBtn = document.createElement('button');
     delBtn.className = 'pp-corner-minus';
     delBtn.title = 'Remove waypoint';
@@ -367,6 +390,7 @@ export class OpMissionPopup {
     delBtn.addEventListener('click', () => this._removeWp(i));
 
     actRow.appendChild(spacer);
+    actRow.appendChild(insertBtn);
     actRow.appendChild(delBtn);
     card.appendChild(actRow);
 
@@ -484,7 +508,11 @@ export class OpMissionPopup {
     });
 
     this._el.querySelector('.opm-cancel').addEventListener('click', () => {
-      if (this._isNew) this._missionTool?.cancelPlacement();
+      if (this._isNew) {
+        this._missionTool?.cancelPlacement();
+      } else if (this._snapshot) {
+        this._manager.updateMission(this._snapshot.id, this._snapshot);
+      }
       this.close();
     });
   }

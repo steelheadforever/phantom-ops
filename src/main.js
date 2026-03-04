@@ -151,7 +151,13 @@ const eMissionPanel = new EMissionPanel({
   eMissionPopup,
 });
 
-const planPanel = new PlanPanel({ sideMenu: null, drawShapesPanel, flightRoutePanel, opMissionPanel, eMissionPanel });
+const planPanel = new PlanPanel({
+  sideMenu: null,
+  drawShapesPanel, flightRoutePanel, opMissionPanel, eMissionPanel,
+  shapeManager, routeManager, opMissionManager, eMissionManager,
+  shapePopup, polygonPopup, linePopup, pointPopup,
+  routePopup, opMissionPopup, eMissionPopup,
+});
 
 // ── Study UI ───────────────────────────────────────────────────
 const studyPanel = new StudyPanel();

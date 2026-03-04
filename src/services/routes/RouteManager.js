@@ -126,6 +126,23 @@ export class RouteManager {
     }
   }
 
+  /**
+   * Insert a new waypoint after afterIndex and re-render the route.
+   */
+  insertWaypoint(id, afterIndex, wpDefaults) {
+    const rec = this._find(id);
+    if (!rec) return;
+    const newWp = {
+      lat: wpDefaults.lat, lng: wpDefaults.lng,
+      ident: '', name: '', ktas: null, windHdg: null, windSpd: null, alt: null,
+    };
+    rec.waypoints.splice(afterIndex + 1, 0, newWp);
+    this._removeRender(id);
+    this._renderRoute(rec);
+    this.persist();
+    this._notify();
+  }
+
   /** Remove all routes and clear localStorage. */
   clearAll() {
     for (const id of this._layers.keys()) {

@@ -133,6 +133,26 @@ export class EMissionManager {
     }
   }
 
+  /**
+   * Insert a new waypoint after afterIndex and re-render the mission.
+   */
+  insertWaypoint(id, afterIndex, wpDefaults) {
+    const rec = this._find(id);
+    if (!rec) return;
+    const newWp = {
+      lat: wpDefaults.lat, lng: wpDefaults.lng,
+      ident: '', name: '', alt: null,
+      loiter: false, loiterRadius: null, loiterDir: 'CW',
+      exitCond: null, exitValue: null,
+      lastSix: false,
+    };
+    rec.waypoints.splice(afterIndex + 1, 0, newWp);
+    this._removeRender(id);
+    this._renderMission(rec);
+    this.persist();
+    this._notify();
+  }
+
   /** Remove all missions and clear localStorage. */
   clearAll() {
     for (const id of this._layers.keys()) {

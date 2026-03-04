@@ -75,3 +75,18 @@ body {
 .leaflet-control-attribution a {
   color: rgba(255, 255, 255, 0.6) !important;
 }
+
+/* ─── Placement cursor mode ──────────────────────────────────── */
+/* Forces crosshair on the map and all interactive Leaflet elements
+   while a draw tool is placing waypoints. */
+.leaflet-container.cursor-placing,
+.leaflet-container.cursor-placing .leaflet-interactive {
+  cursor: crosshair !important;
+}
+/* Except the WP dot markers on the active route/mission — show pointer
+   to signal that they are draggable/editable. */
+.leaflet-container.cursor-placing .route-wp-marker,
+.leaflet-container.cursor-placing .opm-wp-marker,
+.leaflet-container.cursor-placing .em-wp-marker {
+  cursor: pointer !important;
+}

@@ -47,6 +47,7 @@ export class RoutePopup {
     this._isNew = false;
     this._isPre = false;
     this._placingEnabled = false;
+    this._snapshot = null;  // deep copy taken on open() for cancel-revert
 
     // Header field refs
     this._nameInput = null;
@@ -166,6 +167,7 @@ export class RoutePopup {
     this._isNew = isNew;
     this._isPre = false;
     this._placingEnabled = false;
+    this._snapshot = isNew ? null : JSON.parse(JSON.stringify(rec));
 
     this._nameInput.value = rec.name ?? '';
     this._descInput.value = rec.description ?? '';
@@ -181,9 +183,17 @@ export class RoutePopup {
   }
 
   close() {
+    this._routeTool?.cancelInsert();
     this._el.style.display = 'none';
     this._currentId = null;
     this._isPre = false;
+  }
+
+  /** Clear active state from all insert buttons (called by RouteDrawTool.cancelInsert). */
+  refreshInsertButtons() {
+    this._wpContainer?.querySelectorAll('.rp-wp-insert-btn--active').forEach((btn) => {
+      btn.classList.remove('rp-wp-insert-btn--active');
+    });
   }
 
   /** Rebuild the waypoint table (called after any WP addition or update). */
@@ -392,12 +402,25 @@ export class RoutePopup {
       card.appendChild(legRow);
     }
 
-    // ── Actions row: delete button ──
+    // ── Actions row: insert + delete buttons ──
     const actRow = document.createElement('div');
     actRow.className = 'route-wp-row route-act-row';
 
     const spacer = document.createElement('span');
     spacer.style.flex = '1';
+
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'rp-wp-insert-btn';
+    insertBtn.title = 'Insert waypoint after this one';
+    insertBtn.textContent = '+';
+    insertBtn.addEventListener('click', () => {
+      const isActive = insertBtn.classList.toggle('rp-wp-insert-btn--active');
+      if (isActive) {
+        this._routeTool?.startInsert(this._currentId, i);
+      } else {
+        this._routeTool?.cancelInsert();
+      }
+    });
 
     const delBtn = document.createElement('button');
     delBtn.className = 'pp-corner-minus';
@@ -406,6 +429,7 @@ export class RoutePopup {
     delBtn.addEventListener('click', () => this._removeWp(i));
 
     actRow.appendChild(spacer);
+    actRow.appendChild(insertBtn);
     actRow.appendChild(delBtn);
     card.appendChild(actRow);
 
@@ -474,7 +498,11 @@ export class RoutePopup {
     });
 
     this._el.querySelector('.rp-cancel').addEventListener('click', () => {
-      if (this._isNew) this._routeTool?.cancelPlacement();
+      if (this._isNew) {
+        this._routeTool?.cancelPlacement();
+      } else if (this._snapshot) {
+        this._routeManager.updateRoute(this._snapshot.id, this._snapshot);
+      }
       this.close();
     });
   }

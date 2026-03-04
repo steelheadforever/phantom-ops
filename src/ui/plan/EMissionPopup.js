@@ -68,6 +68,7 @@ export class EMissionPopup {
 
     this._selectedWpIndex = null;
     this._selectionRing = null;
+    this._snapshot = null;
   }
 
   mount(root = document.body) {
@@ -143,6 +144,7 @@ export class EMissionPopup {
     this._isPre = false;
     this._placingEnabled = false;
     this._selectedWpIndex = null;
+    this._snapshot = isNew ? null : JSON.parse(JSON.stringify(rec));
 
     this._nameInput.value = rec.name ?? '';
     this._updatePlaceBtn();
@@ -151,10 +153,18 @@ export class EMissionPopup {
   }
 
   close() {
+    this._eMissionTool?.cancelInsert();
     this._el.style.display = 'none';
     this._currentId = null;
     this._isPre = false;
     this._removeSelectionRing();
+  }
+
+  /** Clear active state from all insert buttons (called by EMissionDrawTool.cancelInsert). */
+  refreshInsertButtons() {
+    this._wpContainer?.querySelectorAll('.em-wp-insert-btn--active').forEach((btn) => {
+      btn.classList.remove('em-wp-insert-btn--active');
+    });
   }
 
   /** Rebuild the waypoint table. */
@@ -369,9 +379,23 @@ export class EMissionPopup {
     delBtn.innerHTML = '&minus;';
     delBtn.addEventListener('click', () => this._removeWp(i));
 
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'em-wp-insert-btn';
+    insertBtn.title = 'Insert waypoint after this one';
+    insertBtn.textContent = '+';
+    insertBtn.addEventListener('click', () => {
+      const isActive = insertBtn.classList.toggle('em-wp-insert-btn--active');
+      if (isActive) {
+        this._eMissionTool?.startInsert(this._currentId, i);
+      } else {
+        this._eMissionTool?.cancelInsert();
+      }
+    });
+
     last6Row.appendChild(last6Chk);
     last6Row.appendChild(last6Label);
     last6Row.appendChild(spacer);
+    last6Row.appendChild(insertBtn);
     last6Row.appendChild(delBtn);
     card.appendChild(last6Row);
 
@@ -508,7 +532,11 @@ export class EMissionPopup {
     });
 
     this._el.querySelector('.em-cancel').addEventListener('click', () => {
-      if (this._isNew) this._eMissionTool?.cancelPlacement();
+      if (this._isNew) {
+        this._eMissionTool?.cancelPlacement();
+      } else if (this._snapshot) {
+        this._manager.updateMission(this._snapshot.id, this._snapshot);
+      }
       this.close();
     });
   }
