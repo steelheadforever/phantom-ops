@@ -157,6 +157,8 @@ const planPanel = new PlanPanel({
   shapeManager, routeManager, opMissionManager, eMissionManager,
   shapePopup, polygonPopup, linePopup, pointPopup,
   routePopup, opMissionPopup, eMissionPopup,
+  circleTool, polygonTool, lineTool, pointTool,
+  missionTool, eMissionTool,
 });
 
 // ── Study UI ───────────────────────────────────────────────────
@@ -212,6 +214,11 @@ contextMenu = new ContextMenu({
     { layerId: 'navaids',        layer: mapCore.navaidLayer },
     { layerId: 'ifr-fixes-high', layer: mapCore.fixHighLayer },
     { layerId: 'ifr-fixes-low',  layer: mapCore.fixLowLayer },
+  ],
+  planProviders: [
+    { getItems: () => routeManager.routes,        openEdit: (id) => routePopup.open(id, { isNew: false }) },
+    { getItems: () => opMissionManager.missions,  openEdit: (id) => opMissionPopup.open(id, { isNew: false }) },
+    { getItems: () => eMissionManager.missions,   openEdit: (id) => eMissionPopup.open(id, { isNew: false }) },
   ],
 });
 new BaseLayerMenu({ mapCore, bottomBar }).mount();

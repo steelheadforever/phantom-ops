@@ -9,6 +9,8 @@ export class PlanPanel {
     shapeManager, routeManager, opMissionManager, eMissionManager,
     shapePopup, polygonPopup, linePopup, pointPopup,
     routePopup, opMissionPopup, eMissionPopup,
+    circleTool, polygonTool, lineTool, pointTool,
+    missionTool, eMissionTool,
   } = {}) {
     this._sideMenu = sideMenu;
     this._drawShapesPanel = drawShapesPanel;
@@ -28,6 +30,13 @@ export class PlanPanel {
     this._routePopup = routePopup;
     this._opMissionPopup = opMissionPopup;
     this._eMissionPopup = eMissionPopup;
+
+    this._circleTool = circleTool;
+    this._polygonTool = polygonTool;
+    this._lineTool = lineTool;
+    this._pointTool = pointTool;
+    this._missionTool = missionTool;
+    this._eMissionTool = eMissionTool;
 
     this._overviewEl = null;
     this.el = this._build();
@@ -54,9 +63,32 @@ export class PlanPanel {
     const btnGroup = document.createElement('div');
     btnGroup.className = 'panel-btn-group';
 
+    // Draw Shapes/Points — inline accordion
     const drawShapesBtn = this._makeBtn('Draw Shapes/Points', false);
+    const shapeArrow = document.createElement('span');
+    shapeArrow.className = 'panel-btn-arrow';
+    shapeArrow.textContent = '▸';
+    drawShapesBtn.appendChild(shapeArrow);
+
+    const shapeSubGroup = document.createElement('div');
+    shapeSubGroup.className = 'panel-sub-group';
+    for (const [label, tool] of [
+      ['Circle', this._circleTool],
+      ['Polygon', this._polygonTool],
+      ['Line', this._lineTool],
+      ['Point', this._pointTool],
+    ]) {
+      const btn = document.createElement('button');
+      btn.className = 'panel-sub-btn';
+      btn.textContent = label;
+      btn.addEventListener('click', () => { this._sideMenu.close(); tool?.activate(); });
+      shapeSubGroup.appendChild(btn);
+    }
+
     drawShapesBtn.addEventListener('click', () => {
-      this._sideMenu.pushView('draw-shapes', this._drawShapesPanel.el);
+      const open = !shapeSubGroup.classList.contains('panel-sub-group--open');
+      shapeSubGroup.classList.toggle('panel-sub-group--open', open);
+      shapeArrow.textContent = open ? '▾' : '▸';
     });
 
     const drawRouteBtn = this._makeBtn('Draw Route', false);
@@ -66,15 +98,18 @@ export class PlanPanel {
 
     const opMissionBtn = this._makeBtn('Op Mission', false);
     opMissionBtn.addEventListener('click', () => {
-      this._sideMenu.pushView('op-mission', this._opMissionPanel.el);
+      this._sideMenu.close();
+      this._missionTool?.activate();
     });
 
     const eMissionBtn = this._makeBtn('E-Mission', false);
     eMissionBtn.addEventListener('click', () => {
-      this._sideMenu.pushView('e-mission', this._eMissionPanel.el);
+      this._sideMenu.close();
+      this._eMissionTool?.activate();
     });
 
     btnGroup.appendChild(drawShapesBtn);
+    btnGroup.appendChild(shapeSubGroup);
     btnGroup.appendChild(drawRouteBtn);
     btnGroup.appendChild(opMissionBtn);
     btnGroup.appendChild(eMissionBtn);

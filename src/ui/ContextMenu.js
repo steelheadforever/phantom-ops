@@ -8,13 +8,14 @@
  * Suppressed while MeasureTool is active.
  */
 export class ContextMenu {
-  constructor({ map, coordinateService, airspaceLayers, measureTool, pointLayers = [], layerManager = null }) {
+  constructor({ map, coordinateService, airspaceLayers, measureTool, pointLayers = [], layerManager = null, planProviders = [] }) {
     this._map = map;
     this._coordinateService = coordinateService;
     this._airspaceLayers = airspaceLayers; // Map<id, L.geoJSON> — live reference
     this._measureTool = measureTool;
     this._pointLayers = pointLayers;       // [{ layerId, layer }]
     this._layerManager = layerManager;
+    this._planProviders = planProviders;   // [{ getItems(), openEdit(id) }]
 
     this._el = null;
     this._tipEl = null;
@@ -119,8 +120,21 @@ export class ContextMenu {
       return row;
     });
 
+    // ── Edit targets ─────────────────────────────────────────────────────
+    const editTargets = this._getEditTargets(latlng);
+
     // ── Assemble ─────────────────────────────────────────────────────────
     this._el.innerHTML = '';
+
+    if (editTargets.length) {
+      const editSection = document.createElement('div');
+      editSection.className = 'ccm-section';
+      editTargets.forEach((t) => editSection.appendChild(this._makeEditRow(t)));
+      this._el.appendChild(editSection);
+      const editDivider = document.createElement('div');
+      editDivider.className = 'ccm-divider';
+      this._el.appendChild(editDivider);
+    }
 
     const coordSection = document.createElement('div');
     coordSection.className = 'ccm-section';
@@ -298,6 +312,35 @@ export class ContextMenu {
     if (lower !== null && upper !== null) return `${fmt(lower, lowerCode)} – ${fmt(upper, upperCode)}`;
     if (lower !== null) return `from ${fmt(lower, lowerCode)}`;
     return `to ${fmt(upper, upperCode)}`;
+  }
+
+  // ─── plan item edit targets ──────────────────────────────────────────────
+
+  _getEditTargets(latlng) {
+    if (!this._planProviders.length) return [];
+    const clickPt = this._map.latLngToContainerPoint(latlng);
+    const results = [];
+    for (const provider of this._planProviders) {
+      for (const item of (provider.getItems() ?? [])) {
+        if (item.visible === false) continue;
+        const wps = item.waypoints ?? [];
+        let found = false;
+        for (const wp of wps) {
+          const pt = this._map.latLngToContainerPoint(L.latLng(wp.lat, wp.lng));
+          if (Math.hypot(clickPt.x - pt.x, clickPt.y - pt.y) < 22) { found = true; break; }
+        }
+        if (found) results.push({ name: item.name, openEdit: () => provider.openEdit(item.id) });
+      }
+    }
+    return results;
+  }
+
+  _makeEditRow({ name, openEdit }) {
+    const row = document.createElement('div');
+    row.className = 'ccm-edit-row';
+    row.textContent = `Edit ${name}`;
+    row.addEventListener('click', () => { this._hide(); openEdit(); });
+    return row;
   }
 
   // ─── nearby points ───────────────────────────────────────────────────────

@@ -132,6 +132,24 @@
   flex-shrink: 0;
 }
 
+/* ─── Plan edit rows ──────────────────────────────────────── */
+
+.ccm-edit-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.ccm-edit-row:hover {
+  background: rgba(43, 58, 171, 0.28);
+}
+
 /* ─── Altitude side-tooltip ───────────────────────────────── */
 
 .ccm-alt-tip {

@@ -65,6 +65,45 @@
   cursor: not-allowed;
 }
 
+/* ─── Draw Shapes accordion sub-group ──────────────────────── */
+
+.panel-btn-arrow {
+  margin-left: auto;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.panel-sub-group {
+  display: none;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.panel-sub-group--open {
+  display: flex;
+}
+
+.panel-sub-btn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 18px 8px 34px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'B612 Mono', ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.panel-sub-btn:hover {
+  background: rgba(43, 58, 171, 0.3);
+  color: var(--gold);
+}
+
 /* ─── Side-menu root: enabled PLAN button ──────────────────── */
 
 .side-menu__btn--enabled {
