@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
+  padding: 0 8px;
   height: 32px;
   background: none;
   border: none;
@@ -30,16 +30,16 @@
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   transition: background 0.15s, color 0.15s;
 }
 
 .top-bar__hamburger:hover {
   background: rgba(43, 58, 171, 0.35);
   color: var(--gold);
-}
-
-.top-bar__hamburger svg {
-  pointer-events: none;
 }
 
 .top-bar__cross {

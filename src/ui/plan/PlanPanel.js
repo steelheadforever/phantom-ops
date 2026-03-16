@@ -10,7 +10,7 @@ export class PlanPanel {
     shapePopup, polygonPopup, linePopup, pointPopup,
     routePopup, opMissionPopup, eMissionPopup,
     circleTool, polygonTool, lineTool, pointTool,
-    missionTool, eMissionTool,
+    routeTool, missionTool, eMissionTool,
   } = {}) {
     this._sideMenu = sideMenu;
     this._drawShapesPanel = drawShapesPanel;
@@ -35,6 +35,7 @@ export class PlanPanel {
     this._polygonTool = polygonTool;
     this._lineTool = lineTool;
     this._pointTool = pointTool;
+    this._routeTool = routeTool;
     this._missionTool = missionTool;
     this._eMissionTool = eMissionTool;
 
@@ -93,7 +94,8 @@ export class PlanPanel {
 
     const drawRouteBtn = this._makeBtn('Draw Route', false);
     drawRouteBtn.addEventListener('click', () => {
-      this._sideMenu.pushView('flight-route', this._flightRoutePanel.el);
+      this._sideMenu.close();
+      this._routeTool?.activate();
     });
 
     const opMissionBtn = this._makeBtn('Op Mission', false);

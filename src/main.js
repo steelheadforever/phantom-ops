@@ -158,7 +158,7 @@ const planPanel = new PlanPanel({
   shapePopup, polygonPopup, linePopup, pointPopup,
   routePopup, opMissionPopup, eMissionPopup,
   circleTool, polygonTool, lineTool, pointTool,
-  missionTool, eMissionTool,
+  routeTool, missionTool, eMissionTool,
 });
 
 // ── Study UI ───────────────────────────────────────────────────
